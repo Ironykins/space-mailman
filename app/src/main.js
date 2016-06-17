@@ -4,33 +4,35 @@ window.onload = function() {
     var cursors;
     var player;
     var bg, bgnear;
+    var asteroidCount;
+    var maxAsteroids = 20;
 
     function preload () {
-        game.load.image('logo', 'phaser.png');
         game.load.image('player_ship', 'app/sprite/ship.png');
+        //game.load.atlas('test', 'app/sprite/atlas_hash_trim.png', 'app/sprite/atlas_json_array_trim.json', Phaser.Loader.TEXTURE_ATLAS_JSON_HASH);
+        game.load.atlas('asteroids', 'app/sprite/asteroids.png', 'app/sprite/asteroids.json', Phaser.Loader.TEXTURE_ATLAS_JSON_HASH);
     }
 
     function create () {
-        var checkerboard = game.add.bitmapData(512, 512, null, true);
-        //checkerboard.rect(0, 0, 32, 32, 'rgba(255,255,255,1)');
+        game.world.setBounds(0, 0, 1920, 1920);
+        var stars = game.add.bitmapData(512, 512, null, true);
         for(i = 0; i<30;i++) {
             var x = Math.floor((Math.random() * 512)); 
             var y = Math.floor((Math.random() * 512)); 
-            checkerboard.rect(x, y, 8, 8, 'rgba(255,255,255,1)');
+            stars.rect(x, y, 8, 8, 'rgba(255,255,255,1)');
         }
         
-        bg = game.add.tileSprite(0, 0, game.width, game.height, checkerboard);
+        bg = game.add.tileSprite(0, 0, game.width, game.height, stars);
         bg.fixedToCamera = true;
         bg.tileScale.set(0.5);
         bg.tint = 0x555555;
 
-        bgnear = game.add.tileSprite(0, 0, game.width, game.height, checkerboard);
+        bgnear = game.add.tileSprite(0, 0, game.width, game.height, stars);
         bgnear.fixedToCamera = true;
         bgnear.tint = 0x888888;
 
         player = game.add.sprite(game.world.centerX, game.world.centerY, 'player_ship');
         player.anchor.setTo(0.5, 0.5);
-
         game.physics.arcade.enable(player);
         player.body.bounce = new Phaser.Point(0.5,0.5);
         player.body.collideWorldBounds = true;
@@ -39,10 +41,9 @@ window.onload = function() {
 
         cursors = game.input.keyboard.createCursorKeys();
 
-        game.world.setBounds(0, 0, 1920, 1920);
         game.camera.follow(player);
-        game.add.sprite(game.world.centerX, game.world.centerY, 'player_ship');
-        //game.camera.setSize(1600, 1200)
+        ast = game.add.sprite(game.world.centerX, game.world.centerY, 'asteroids', 'reg_lg');
+        ast.scale.setTo(2,2);
     }
 
     function update () {
