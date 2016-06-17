@@ -1,0 +1,16 @@
+/*
+ * style.css
+ * Copyright (C) 2016 konrad
+ *
+ * Distributed under terms of the MIT license.
+ */
+
+body {
+	background: black;
+	color: black;
+}
+
+#game_window {
+    width: 800px;
+    margin: auto;
+}
