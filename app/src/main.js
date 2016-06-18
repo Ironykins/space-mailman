@@ -6,9 +6,11 @@ var asteroidCount;
 var maxAsteroids = 20;
 var asteroids = [];
 var debug = false;
+var flare;
 
 function preload () {
     game.load.image('player_ship', 'app/sprite/ship.png');
+    game.load.image('ship_flare', 'app/sprite/ship_thrust.png');
     game.load.atlas('asteroids', 'app/sprite/asteroids.png', 'app/sprite/asteroids.json', Phaser.Loader.TEXTURE_ATLAS_JSON_HASH);
 }
 
@@ -38,11 +40,14 @@ function create () {
 
     //Create Player
     player = game.add.sprite(game.world.centerX, game.world.centerY, 'player_ship');
-    //player.anchor.setTo(0.5, 0.5);
+    flare = game.add.sprite(0, 28, 'ship_flare');
+    flare.anchor = new Phaser.Point(0.5,0.5);
+    flare.angle = 180;
     game.physics.p2.enable(player,debug);
     player.body.collideWorldBounds = true;
     player.body.damping = 0.2;
     player.body.angularDamping = 0.999;
+    player.addChild(flare);
 
     game.camera.follow(player);
 
@@ -65,7 +70,10 @@ function update () {
 
     if (cursors.up.isDown) {
         player.body.thrust(150);
+        flare.visible = true;
     }
+    else
+        flare.visible = false;
 
     //Parallax Scrolling
     bg.tilePosition.set(this.game.camera.x * -0.5, this.game.camera.y * -0.5);
