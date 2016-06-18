@@ -4,7 +4,7 @@ var player;
 var bg, bgnear;
 var asteroidCount;
 var maxAsteroids = 20;
-var asteroids = [];
+var asteroids;
 var debug = false;
 var flare;
 
@@ -39,6 +39,8 @@ function create () {
     //  Enable p2 physics
     game.physics.startSystem(Phaser.Physics.P2JS);
     game.physics.p2.defaultRestitution = 0.8;
+    game.physics.p2.setImpactEvents(true);
+    game.physics.p2.restitution = 0.8;
 
     //Create Player
     player = game.add.sprite(game.world.centerX, game.world.centerY, 'player_ship');
@@ -51,32 +53,43 @@ function create () {
     player.body.damping = 0.2;
     player.body.angularDamping = 0.999;
     player.addChild(flare);
-    player.body.angle = 90;
 
-    weapon = game.add.weapon(30, 'bullet');
-    weapon.bulletKillType = Phaser.Weapon.KILL_LIFESPAN;
-    weapon.bulletLifespan = 2000;
-    weapon.bulletSpeed = 600;
-    weapon.fireRate = 400;
-	weapon.trackSprite(player, 0, 0, false);
+    //  Check for the block hitting another object
+    //player.body.onBeginContact.add(playerCollide, this);
+    
+    var playerCollisionGroup = game.physics.p2.createCollisionGroup();
+    var asteroidCollisionGroup = game.physics.p2.createCollisionGroup();
+    game.physics.p2.updateBoundsCollisionGroup();
+
+    player.body.setCollisionGroup(playerCollisionGroup);
+    player.body.collides([asteroidCollisionGroup],playerHitAsteroid,true);
 
     game.camera.follow(player);
 
+    asteroids = game.add.group();
     for (i=0;i<30;i++) {
         var x = Math.floor(Math.random() * game.world.width);
         var y = Math.floor(Math.random() * game.world.height);
-        ast = game.add.sprite(x, y, 'asteroids', 'reg_lg');
+        ast = asteroids.create(x, y, 'asteroids', 'reg_lg');
         game.physics.p2.enable(ast,debug);
         ast.body.collideWorldBounds = true;
         ast.body.setCircle(48,0,0,0);
         ast.body.applyImpulse([(Math.random() * 15)-7.5,(Math.random() * 15)-7.5],0,0)
+        ast.body.setCollisionGroup(asteroidCollisionGroup);
+
+        //  Pandas will collide against themselves and the player
+        //  If you don't set this they'll not collide with anything.
+        //  The first parameter is either an array or a single collision group.
+        ast.body.collides([asteroidCollisionGroup, playerCollisionGroup]);
     }
 }
 
-function update () {
-    // Hacky fix for shooting sideways.
-	weapon.fireAngle = player.body.angle - 90;
+function playerHitAsteroid(body, bodyB, shapeA, shapeB, equation) {
+    player.destroy();
 
+}
+
+function update () {
     if (cursors.left.isDown)
         player.body.rotateLeft(100);
     else if (cursors.right.isDown)
@@ -88,9 +101,6 @@ function update () {
     }
     else
         flare.visible = false;
-
-    if (fireButton.isDown)
-        weapon.fire();
 
     //Parallax Scrolling
     bg.tilePosition.set(this.game.camera.x * -0.5, this.game.camera.y * -0.5);
