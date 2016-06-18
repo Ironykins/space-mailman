@@ -1,5 +1,5 @@
 var game;
-var cursors;
+var cursors, firebutton;
 var player;
 var bg, bgnear;
 var asteroidCount;
@@ -12,11 +12,13 @@ function preload () {
     game.load.image('player_ship', 'app/sprite/ship.png');
     game.load.image('ship_flare', 'app/sprite/ship_thrust.png');
     game.load.atlas('asteroids', 'app/sprite/asteroids.png', 'app/sprite/asteroids.json', Phaser.Loader.TEXTURE_ATLAS_JSON_HASH);
+    game.load.image('bullet', 'app/sprite/shmup-bullet.png');
 }
 
 function create () {
     game.world.setBounds(0, 0, 1920, 1920);
     cursors = game.input.keyboard.createCursorKeys();
+	fireButton = this.input.keyboard.addKey(Phaser.KeyCode.SPACEBAR);
 
     //Create Background Stars
     var stars = game.add.bitmapData(512, 512, null, true);
@@ -40,14 +42,23 @@ function create () {
 
     //Create Player
     player = game.add.sprite(game.world.centerX, game.world.centerY, 'player_ship');
-    flare = game.add.sprite(0, 28, 'ship_flare');
+    flare = game.add.sprite(0, 14, 'ship_flare');
     flare.anchor = new Phaser.Point(0.5,0.5);
+    flare.scale = new Phaser.Point(0.5,0.5);
     flare.angle = 180;
     game.physics.p2.enable(player,debug);
     player.body.collideWorldBounds = true;
     player.body.damping = 0.2;
     player.body.angularDamping = 0.999;
     player.addChild(flare);
+    player.body.angle = 90;
+
+    weapon = game.add.weapon(30, 'bullet');
+    weapon.bulletKillType = Phaser.Weapon.KILL_LIFESPAN;
+    weapon.bulletLifespan = 2000;
+    weapon.bulletSpeed = 600;
+    weapon.fireRate = 400;
+	weapon.trackSprite(player, 0, 0, false);
 
     game.camera.follow(player);
 
@@ -63,6 +74,9 @@ function create () {
 }
 
 function update () {
+    // Hacky fix for shooting sideways.
+	weapon.fireAngle = player.body.angle - 90;
+
     if (cursors.left.isDown)
         player.body.rotateLeft(100);
     else if (cursors.right.isDown)
@@ -74,6 +88,9 @@ function update () {
     }
     else
         flare.visible = false;
+
+    if (fireButton.isDown)
+        weapon.fire();
 
     //Parallax Scrolling
     bg.tilePosition.set(this.game.camera.x * -0.5, this.game.camera.y * -0.5);
