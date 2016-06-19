@@ -7,12 +7,44 @@ var maxAsteroids = 20;
 var asteroids;
 var debug = false;
 var flare;
+var playerCollisionGroup, asteroidCollisionGroup;
 
 function preload () {
     game.load.image('player_ship', 'app/sprite/ship.png');
     game.load.image('ship_flare', 'app/sprite/ship_thrust.png');
     game.load.atlas('asteroids', 'app/sprite/asteroids.png', 'app/sprite/asteroids.json', Phaser.Loader.TEXTURE_ATLAS_JSON_HASH);
     game.load.image('bullet', 'app/sprite/shmup-bullet.png');
+    game.load.spritesheet('explosion', 'app/sprite/explosion.png', 96, 96, 12);
+}
+
+function spawnPlayer() {
+    player = game.add.sprite(game.world.centerX, game.world.centerY, 'player_ship');
+    flare = game.add.sprite(0, 14, 'ship_flare');
+    flare.anchor = new Phaser.Point(0.5,0.5);
+    flare.scale = new Phaser.Point(0.5,0.5);
+    flare.angle = 180;
+    game.physics.p2.enable(player,debug);
+    player.body.collideWorldBounds = true;
+    player.body.damping = 0.2;
+    player.body.angularDamping = 0.999;
+    player.addChild(flare);
+    player.body.setCollisionGroup(playerCollisionGroup);
+    player.body.collides([asteroidCollisionGroup],playerHitAsteroid,true);
+
+    game.camera.follow(player);
+}
+
+//Creates an explosion at x and y corrds.
+function explodeAt(x,y,scale) {
+    boom = game.add.sprite(x, y, 'explosion', 0);
+    if(typeof scale !== "undefined") {
+        boom.scale.set(scale);
+        boom.smoothed = false;
+    }
+    boom.anchor = new Phaser.Point(0.5,0.5);
+    anim = boom.animations.add('explode');
+    anim.killOnComplete = true;
+    anim.play(10);
 }
 
 function create () {
@@ -42,29 +74,12 @@ function create () {
     game.physics.p2.setImpactEvents(true);
     game.physics.p2.restitution = 0.8;
 
-    //Create Player
-    player = game.add.sprite(game.world.centerX, game.world.centerY, 'player_ship');
-    flare = game.add.sprite(0, 14, 'ship_flare');
-    flare.anchor = new Phaser.Point(0.5,0.5);
-    flare.scale = new Phaser.Point(0.5,0.5);
-    flare.angle = 180;
-    game.physics.p2.enable(player,debug);
-    player.body.collideWorldBounds = true;
-    player.body.damping = 0.2;
-    player.body.angularDamping = 0.999;
-    player.addChild(flare);
-
-    //  Check for the block hitting another object
-    //player.body.onBeginContact.add(playerCollide, this);
-    
-    var playerCollisionGroup = game.physics.p2.createCollisionGroup();
-    var asteroidCollisionGroup = game.physics.p2.createCollisionGroup();
+    playerCollisionGroup = game.physics.p2.createCollisionGroup();
+    asteroidCollisionGroup = game.physics.p2.createCollisionGroup();
     game.physics.p2.updateBoundsCollisionGroup();
 
-    player.body.setCollisionGroup(playerCollisionGroup);
-    player.body.collides([asteroidCollisionGroup],playerHitAsteroid,true);
-
-    game.camera.follow(player);
+    //Create Player
+    spawnPlayer();
 
     asteroids = game.add.group();
     for (i=0;i<30;i++) {
@@ -77,16 +92,15 @@ function create () {
         ast.body.applyImpulse([(Math.random() * 15)-7.5,(Math.random() * 15)-7.5],0,0)
         ast.body.setCollisionGroup(asteroidCollisionGroup);
 
-        //  Pandas will collide against themselves and the player
-        //  If you don't set this they'll not collide with anything.
-        //  The first parameter is either an array or a single collision group.
+        //The first parameter is either an array or a single collision group.
         ast.body.collides([asteroidCollisionGroup, playerCollisionGroup]);
     }
 }
 
 function playerHitAsteroid(body, bodyB, shapeA, shapeB, equation) {
+    explodeAt(player.body.x,player.body.y,3);
     player.destroy();
-
+    spawnPlayer();
 }
 
 function update () {
