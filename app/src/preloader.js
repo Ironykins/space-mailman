@@ -30,10 +30,10 @@ SpaceMailman.Preloader.prototype = {
 		//Load all our assets. Progress bar will update as we load these.
 		this.load.image('player_ship', 'app/sprite/ship.png');
 		this.load.image('ship_flare', 'app/sprite/ship_thrust.png');
+		this.load.image('shield', 'app/sprite/shield_bubble.png');
 		//this.load.image('bullet', 'app/sprite/shmup-bullet.png');
 		this.load.atlas('asteroids', 'app/sprite/asteroids.png', 'app/sprite/asteroids.json', Phaser.Loader.TEXTURE_ATLAS_JSON_HASH);
 		this.load.spritesheet('explosion', 'app/sprite/explosion.png', 96, 96, 12);
-
 	},
 
 	create: function () {

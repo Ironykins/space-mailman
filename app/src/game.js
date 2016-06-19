@@ -15,22 +15,6 @@ var flare;
 var playerCollisionGroup, asteroidCollisionGroup;
 
 SpaceMailman.Game = function (game) {
-    this.game;		//	a reference to the currently running game
-    this.add;		//	used to add sprites, text, groups, etc
-    this.camera;	//	a reference to the game camera
-    this.cache;		//	the game cache
-    this.input;		//	the global input manager (you can access this.input.keyboard, this.input.mouse, as well from it)
-    this.load;		//	for preloading assets
-    this.math;		//	lots of useful common math operations
-    this.sound;		//	the sound manager - add a sound, play one, set-up markers, etc
-    this.stage;		//	the game stage
-    this.time;		//	the clock
-    this.tweens;    //  the tween manager
-    this.state;	    //	the state manager
-    this.world;		//	the game world
-    this.particles;	//	the particle manager
-    this.physics;	//	the physics manager
-    this.rnd;		//	the repeatable random number generator
 };
 
 SpaceMailman.Game.prototype = {
@@ -51,8 +35,8 @@ SpaceMailman.Game.prototype = {
     spawnPlayer: function() {
 		player = this.game.add.sprite(game.world.centerX, game.world.centerY, 'player_ship');
 		flare = game.add.sprite(0, 14, 'ship_flare');
-		flare.anchor = new Phaser.Point(0.5,0.5);
-		flare.scale = new Phaser.Point(0.5,0.5);
+		flare.anchor.set(0.5);
+		flare.scale.set(0.5);
 		flare.angle = 180;
 		game.physics.p2.enable(player,debug);
 		player.body.collideWorldBounds = true;
@@ -71,7 +55,6 @@ SpaceMailman.Game.prototype = {
     },
 
     create: function () {
-        this.explodeAt(960,960);
 		this.world.setBounds(0, 0, 1920, 1920);
 		cursors = this.input.keyboard.createCursorKeys();
 		fireButton = this.input.keyboard.addKey(Phaser.KeyCode.SPACEBAR);
@@ -100,10 +83,22 @@ SpaceMailman.Game.prototype = {
 
 		playerCollisionGroup = this.physics.p2.createCollisionGroup();
 		asteroidCollisionGroup = this.physics.p2.createCollisionGroup();
-		this.physics.p2.updateBoundsCollisionGroup();
+		shieldCollisionGroup = this.physics.p2.createCollisionGroup();
 
 		//Create Player
 		this.spawnPlayer();
+
+        //Create Shield
+        shield = game.add.sprite(game.world.centerX,game.world.centerY,'shield');
+        this.physics.p2.enable(shield,debug);
+		shield.anchor.set(0.5);
+		shield.scale.set(8);
+        shield.smoothed = false;
+        shield.body.setCircle(132,0,0,0);
+        shield.body.setCollisionGroup(shieldCollisionGroup);
+        shield.body.collides([asteroidCollisionGroup]);
+		shield.tint = 0x222277;
+        shield.body.static = true;
 
 		asteroids = this.add.group();
 		for (i=0;i<30;i++) {
@@ -119,8 +114,9 @@ SpaceMailman.Game.prototype = {
 			ast.body.setCollisionGroup(asteroidCollisionGroup);
 
 			//The first parameter is either an array or a single collision group.
-			ast.body.collides([asteroidCollisionGroup, playerCollisionGroup]);
+			ast.body.collides([shieldCollisionGroup, asteroidCollisionGroup, playerCollisionGroup]);
 		}
+		this.physics.p2.updateBoundsCollisionGroup();
 
     },
 
@@ -143,7 +139,9 @@ SpaceMailman.Game.prototype = {
     },
 
 	render: function() {
-		this.game.debug.cameraInfo(game.camera, 32, 32);
-		this.game.debug.spriteCoords(player, 32, 500);
+        if(debug) {
+            this.game.debug.cameraInfo(game.camera, 32, 32);
+            this.game.debug.spriteCoords(player, 32, 500);
+        }
 	}
 };
