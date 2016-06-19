@@ -2,7 +2,16 @@
 
 {
 	"filename": "reg_particle",
-	"frame": {"x":8,"y":8,"w":16,"h":16},
+	"frame": {"x":4,"y":4,"w":8,"h":8},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":0,"y":0,"w":8,"h":8},
+	"sourceSize": {"w":8,"h":8}
+},
+
+{
+	"filename": "reg_small",
+	"frame": {"x":16,"y":0,"w":16,"h":16},
 	"rotated": false,
 	"trimmed": true,
 	"spriteSourceSize": {"x":0,"y":0,"w":16,"h":16},
@@ -10,7 +19,7 @@
 },
 
 {
-	"filename": "reg_small",
+	"filename": "reg_med",
 	"frame": {"x":32,"y":0,"w":32,"h":32},
 	"rotated": false,
 	"trimmed": true,
@@ -19,21 +28,12 @@
 },
 
 {
-	"filename": "reg_med",
-	"frame": {"x":64,"y":0,"w":64,"h":64},
-	"rotated": false,
-	"trimmed": true,
-	"spriteSourceSize": {"x":0,"y":0,"w":64,"h":64},
-	"sourceSize": {"w":64,"h":64}
-},
-
-{
 	"filename": "reg_lg",
-	"frame": {"x":132,"y":0,"w":96,"h":96},
+	"frame": {"x":65,"y":0,"w":48,"h":48},
 	"rotated": false,
 	"trimmed": true,
-	"spriteSourceSize": {"x":0,"y":0,"w":96,"h":96},
-	"sourceSize": {"w":96,"h":96}
+	"spriteSourceSize": {"x":0,"y":0,"w":48,"h":48},
+	"sourceSize": {"w":48,"h":48}
 }
 
 ],

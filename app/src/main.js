@@ -89,6 +89,8 @@ function create () {
         game.physics.p2.enable(ast,debug);
         ast.body.collideWorldBounds = true;
         ast.body.setCircle(48,0,0,0);
+        ast.scale.set(2);
+        ast.smoothed = false;
         ast.body.applyImpulse([(Math.random() * 15)-7.5,(Math.random() * 15)-7.5],0,0)
         ast.body.setCollisionGroup(asteroidCollisionGroup);
 
