@@ -11,11 +11,9 @@ var asteroidCount;
 var maxAsteroids = 20;
 var asteroids;
 var debug = false;
-var flare;
 var playerCollisionGroup, asteroidCollisionGroup;
 
-SpaceMailman.Game = function (game) {
-};
+SpaceMailman.Game = function (game) {};
 
 SpaceMailman.Game.prototype = {
     // Create an explosion at an x-y coordinate
@@ -29,29 +27,6 @@ SpaceMailman.Game.prototype = {
         anim = boom.animations.add('explode');
         anim.killOnComplete = true;
         anim.play(10);
-    },
-
-    // Create the player.
-    spawnPlayer: function() {
-		player = this.game.add.sprite(game.world.centerX, game.world.centerY, 'player_ship');
-		flare = game.add.sprite(0, 14, 'ship_flare');
-		flare.anchor.set(0.5);
-		flare.scale.set(0.5);
-		flare.angle = 180;
-		game.physics.p2.enable(player,debug);
-		player.body.collideWorldBounds = true;
-		player.body.damping = 0.2;
-		player.body.angularDamping = 0.999;
-		player.addChild(flare);
-		player.body.setCollisionGroup(playerCollisionGroup);
-		player.body.collides([asteroidCollisionGroup],this.playerHitAsteroid,this);
-		game.camera.follow(player);
-	},
-
-    playerHitAsteroid: function(body,bodyB,shapeA,shapeB,equation) {
-		this.explodeAt(player.body.x,player.body.y,3);
-		player.destroy();
-		this.spawnPlayer();
     },
 
     create: function () {
@@ -117,21 +92,10 @@ SpaceMailman.Game.prototype = {
 			ast.body.collides([shieldCollisionGroup, asteroidCollisionGroup, playerCollisionGroup]);
 		}
 		this.physics.p2.updateBoundsCollisionGroup();
-
     },
 
     update: function () {
-		if (cursors.left.isDown)
-			player.body.rotateLeft(100);
-		else if (cursors.right.isDown)
-			player.body.rotateRight(100);
-
-		if (cursors.up.isDown) {
-			player.body.thrust(150);
-			flare.visible = true;
-		}
-		else
-			flare.visible = false;
+        this.controlPlayer();
 
 		//Parallax Scrolling
 		bg.tilePosition.set(this.camera.x * -0.5, this.camera.y * -0.5);
