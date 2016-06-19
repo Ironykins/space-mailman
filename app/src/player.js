@@ -5,6 +5,9 @@
  * Distributed under terms of the MIT license.
  *
  * Logic for the game's player objects.
+ *
+ * Player sprite has a given scheme of children.
+ * 0 = Flame Trail Effect
  */
 
 SpaceMailman.Game.prototype.spawnPlayer = function() {
@@ -13,6 +16,7 @@ SpaceMailman.Game.prototype.spawnPlayer = function() {
     flare.anchor.set(0.5);
     flare.scale.set(0.5);
     flare.angle = 180;
+
     game.physics.p2.enable(player,debug);
     player.body.collideWorldBounds = true;
     player.body.damping = 0.2;
@@ -25,6 +29,7 @@ SpaceMailman.Game.prototype.spawnPlayer = function() {
 
 SpaceMailman.Game.prototype.playerHitAsteroid = function(body,bodyB,shapeA,shapeB,equation) {
     this.explodeAt(player.body.x,player.body.y,3);
+    player.body.destroy();
     player.destroy();
     //this.spawnPlayer();
     var timer = game.time.create(true);
@@ -43,8 +48,8 @@ SpaceMailman.Game.prototype.controlPlayer = function() {
 
     if (cursors.up.isDown) {
         player.body.thrust(150);
-        flare.visible = true;
+        player.getChildAt(0).visible = true;
     }
     else
-        flare.visible = false;
+        player.getChildAt(0).visible = false;
 }

@@ -71,27 +71,21 @@ SpaceMailman.Game.prototype = {
         shield.smoothed = false;
         shield.body.setCircle(132,0,0,0);
         shield.body.setCollisionGroup(shieldCollisionGroup);
-        shield.body.collides([asteroidCollisionGroup]);
+        shield.body.collides([asteroidCollisionGroup],this.shieldHitAsteroid,this);
 		shield.tint = 0x222277;
         shield.body.static = true;
+		this.physics.p2.updateBoundsCollisionGroup();
 
 		asteroids = this.add.group();
 		for (i=0;i<30;i++) {
 			var x = Math.floor(Math.random() * this.world.width);
 			var y = Math.floor(Math.random() * this.world.height);
-			ast = asteroids.create(x, y, 'asteroids', 'reg_lg');
-			this.physics.p2.enable(ast,debug);
-			ast.body.collideWorldBounds = true;
-			ast.body.setCircle(48,0,0,0);
-			ast.scale.set(2);
-			ast.smoothed = false;
-			ast.body.applyImpulse([(Math.random() * 15)-7.5,(Math.random() * 15)-7.5],0,0)
-			ast.body.setCollisionGroup(asteroidCollisionGroup);
-
-			//The first parameter is either an array or a single collision group.
-			ast.body.collides([shieldCollisionGroup, asteroidCollisionGroup, playerCollisionGroup]);
+            this.spawnAsteroid(x,y)
 		}
-		this.physics.p2.updateBoundsCollisionGroup();
+    },
+
+    shieldHitAsteroid: function(body,bodyB,shapeA,shapeB,equation) {
+        this.destroyAsteroid(bodyB);
     },
 
     update: function () {
