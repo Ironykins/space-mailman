@@ -5,13 +5,18 @@
  * Distributed under terms of the MIT license.
  */
 var cursors, firebutton;
-var player;
 var bg, bgnear;
 var asteroidCount;
 var maxAsteroids = 20;
 var asteroids;
 var debug = false;
 var playerCollisionGroup, asteroidCollisionGroup;
+var scoreText;
+
+var player = {
+    score: 0,
+    lives: 3
+};
 
 SpaceMailman.Game = function (game) {};
 
@@ -43,8 +48,13 @@ SpaceMailman.Game.prototype = {
 		}
 		bg = this.add.tileSprite(0, 0, this.world.width, this.world.height, stars);
 		bg.fixedToCamera = true;
-		bg.tileScale.set(0.5);
+		bg.tileScale.set(0.6);
 		bg.tint = 0x555555;
+
+		bgfar = this.add.tileSprite(0, 0, this.world.width, this.world.height, stars);
+		bgfar.fixedToCamera = true;
+		bgfar.tileScale.set(0.3);
+		bgfar.tint = 0x555555;
 
 		bgnear = this.add.tileSprite(0, 0, this.world.width, this.world.height, stars);
 		bgnear.fixedToCamera = true;
@@ -75,13 +85,14 @@ SpaceMailman.Game.prototype = {
 		shield.tint = 0x222277;
         shield.body.static = true;
 		this.physics.p2.updateBoundsCollisionGroup();
-
 		asteroids = this.add.group();
 		for (i=0;i<30;i++) {
 			var x = Math.floor(Math.random() * this.world.width);
 			var y = Math.floor(Math.random() * this.world.height);
             this.spawnAsteroid(x,y)
 		}
+
+        this.createHUD();
     },
 
     shieldHitAsteroid: function(body,bodyB,shapeA,shapeB,equation) {
@@ -92,14 +103,15 @@ SpaceMailman.Game.prototype = {
         this.controlPlayer();
 
 		//Parallax Scrolling
-		bg.tilePosition.set(this.camera.x * -0.5, this.camera.y * -0.5);
+		bgfar.tilePosition.set(this.camera.x * -0.3, this.camera.y * -0.3);
+		bg.tilePosition.set(this.camera.x * -0.6, this.camera.y * -0.6);
 		bgnear.tilePosition.set(this.camera.x * -1, this.camera.y * -1);
     },
 
 	render: function() {
         if(debug) {
             this.game.debug.cameraInfo(game.camera, 32, 32);
-            this.game.debug.spriteCoords(player, 32, 500);
+            this.game.debug.spriteCoords(player.sprite, 32, 500);
         }
 	}
 };

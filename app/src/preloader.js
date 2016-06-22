@@ -34,6 +34,7 @@ SpaceMailman.Preloader.prototype = {
 		//this.load.image('bullet', 'app/sprite/shmup-bullet.png');
 		this.load.atlas('asteroids', 'app/sprite/asteroids.png', 'app/sprite/asteroids.json', Phaser.Loader.TEXTURE_ATLAS_JSON_HASH);
 		this.load.spritesheet('explosion', 'app/sprite/explosion.png', 96, 96, 12);
+        this.load.bitmapFont('carrier_command', 'app/font/carrier_command.png', 'app/font/carrier_command.xml');
 	},
 
 	create: function () {

@@ -69,4 +69,7 @@ SpaceMailman.Game.prototype.destroyAsteroid = function(asteroid) {
 
     this.spawnAsteroid(newX+64,newY,newSize);
     this.spawnAsteroid(newX-64,newY,newSize);
+
+    player.score += 1;
+    this.updateHUD();
 }
