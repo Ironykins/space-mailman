@@ -9,6 +9,10 @@
  * Player sprite has a given scheme of children.
  * 0 = Flame Trail Effect
  */
+var player = {
+    score: 0,
+    lives: 3
+};
 
 SpaceMailman.Game.prototype.spawnPlayer = function() {
     player.sprite = this.game.add.sprite(game.world.centerX, game.world.centerY, 'player_ship');
@@ -31,9 +35,17 @@ SpaceMailman.Game.prototype.playerHitAsteroid = function(body,bodyB,shapeA,shape
     this.explodeAt(player.sprite.body.x,player.sprite.body.y,3);
     player.sprite.body.destroy();
     player.sprite.destroy();
-    var timer = game.time.create(true);
-    timer.add(2000, this.spawnPlayer, this);
-    timer.start();
+
+    if(player.lives > 0) {
+        player.lives -= 1;
+        this.updateHUD();
+        var timer = game.time.create(true);
+        timer.add(2000, this.spawnPlayer, this);
+        timer.start();
+    }
+    else {
+        this.gameOverScreen();
+    }
 }
 
 SpaceMailman.Game.prototype.controlPlayer = function() {

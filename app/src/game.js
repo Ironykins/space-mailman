@@ -11,12 +11,6 @@ var maxAsteroids = 20;
 var asteroids;
 var debug = false;
 var playerCollisionGroup, asteroidCollisionGroup;
-var scoreText;
-
-var player = {
-    score: 0,
-    lives: 3
-};
 
 SpaceMailman.Game = function (game) {};
 
