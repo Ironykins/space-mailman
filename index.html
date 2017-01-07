@@ -3,11 +3,28 @@
     <head>
         <meta charset="UTF-8" />
         <title>Space Mailman</title>
-        <script src="phaser/phaser.js"></script>
-        <script src="app/src/main.js"></script>
+        <script src="phaser/phaser.min.js"></script>
+        <script src="app/src/boot.js"></script>
+        <script src="app/src/preloader.js"></script>
+        <!--<script src="app/src/MainMenu.js"></script>-->
+        <script src="app/src/game.js"></script>
+        <script src="app/src/player.js"></script>
+        <script src="app/src/asteroid.js"></script>
+        <script src="app/src/hud.js"></script>
         <link rel="stylesheet" type="text/css" href="style.css">
     </head>
     <body>
         <div id="game_window"></div>
+        <script type="text/javascript">
+            // Create game.
+            var game = new Phaser.Game(800, 600, Phaser.AUTO, 'game_window');
+
+            game.state.add('Boot', SpaceMailman.Boot);
+            game.state.add('Preloader', SpaceMailman.Preloader);
+            game.state.add('Game', SpaceMailman.Game);
+
+            // Start the initial state
+            game.state.start('Boot');
+        </script>
     </body>
 </html>
