@@ -48,5 +48,12 @@ SpaceMailman.Boot.prototype = {
     create: function () {
         // Switch into the preloader state.
         this.state.start('Preloader');
+        
+        // Add our custom weapon to the GameObjectFactory.
+        Phaser.GameObjectFactory.prototype.smweapon = function (quantity, key, frame, group) {
+            var weapon = this.game.plugins.add(Phaser.Plugin.SMWeapon);
+            //weapon.createBullets(quantity, key, frame, group);
+            return weapon;
+        }
     }
 };

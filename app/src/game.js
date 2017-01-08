@@ -83,7 +83,9 @@ SpaceMailman.Game.prototype = {
 		for (i=0;i<30;i++) {
 			var x = Math.floor(Math.random() * this.world.width);
 			var y = Math.floor(Math.random() * this.world.height);
-            this.spawnAsteroid(x,y)
+            var ast = this.spawnAsteroid(x,y);
+			// Give new asteroids a push.
+			ast.body.applyImpulse([(Math.random() * 15)-7.5,(Math.random() * 15)-7.5],0,0)
 		}
 
         this.createHUD();

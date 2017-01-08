@@ -11,12 +11,13 @@
  */
 var player = {
     score: 0,
-    lives: 3
+    lives: 3,
+    weapon: null,
 };
 
 SpaceMailman.Game.prototype.spawnPlayer = function() {
     player.sprite = this.game.add.sprite(game.world.centerX, game.world.centerY, 'player_ship');
-    flare = game.add.sprite(0, 14, 'ship_flare');
+    flare = this.game.add.sprite(0, 14, 'ship_flare');
     flare.anchor.set(0.5);
     flare.scale.set(0.5);
     flare.angle = 180;
@@ -29,10 +30,17 @@ SpaceMailman.Game.prototype.spawnPlayer = function() {
     player.sprite.body.setCollisionGroup(playerCollisionGroup);
     player.sprite.body.collides([asteroidCollisionGroup],this.playerHitAsteroid,this);
     game.camera.follow(player.sprite);
+
+    // Create the player's weapon.
+    player.weapon = this.game.add.smweapon();
 }
 
 SpaceMailman.Game.prototype.playerHitAsteroid = function(body,bodyB,shapeA,shapeB,equation) {
     this.explodeAt(player.sprite.body.x,player.sprite.body.y,3);
+    this.playerDeath();
+}
+
+SpaceMailman.Game.prototype.playerDeath = function() {
     player.sprite.body.destroy();
     player.sprite.destroy();
 
