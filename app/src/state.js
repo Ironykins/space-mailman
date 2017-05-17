@@ -11,4 +11,5 @@ var player = {
     score: 0,
     lives: 3,
     weapon: null,
+    dead: true
 };

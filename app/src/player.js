@@ -11,28 +11,33 @@
  */
 
 SpaceMailman.Game.prototype.spawnPlayer = function() {
+    player.dead = false;
+    if(player.sprite) player.sprite.destroy();
+
     player.sprite = this.game.add.sprite(game.world.centerX, game.world.centerY, 'player_ship');
+    player.sprite.anchor.set(0.5);
     flare = game.add.sprite(0, 14, 'ship_flare');
     flare.anchor.set(0.5);
     flare.scale.set(0.5);
     flare.angle = 180;
 
-    game.physics.p2.enable(player.sprite,debug);
+    game.physics.enable(player.sprite, Phaser.Physics.ARCADE, debug);
+    player.sprite.body.setCircle(12,4,4);
     player.sprite.body.collideWorldBounds = true;
-    player.sprite.body.damping = 0.5;
-    player.sprite.body.angularDamping = 0.999;
+    player.sprite.body.drag.set(30);
+    player.sprite.body.maxVelocity.set(300);
     
     player.sprite.addChildAt(flare,0);
-    player.sprite.body.setCollisionGroup(playerCollisionGroup);
-    player.sprite.body.collides([asteroidCollisionGroup],this.playerHitAsteroid,this);
     game.camera.follow(player.sprite);
 }
 
-SpaceMailman.Game.prototype.playerHitAsteroid = function(body,bodyB,shapeA,shapeB,equation) {
+SpaceMailman.Game.prototype.playerHitAsteroid = function() {
+    if(player.dead) return;
     this.explodeAt(player.sprite.body.x,player.sprite.body.y,3);
-    player.sprite.body.destroy();
-    player.sprite.destroy();
-
+    player.dead = true;
+    player.sprite.alpha = 0;
+    player.sprite.body.enable = false;
+    
     if(player.lives > 0) {
         player.lives -= 1;
         this.updateHUD();
@@ -46,22 +51,22 @@ SpaceMailman.Game.prototype.playerHitAsteroid = function(body,bodyB,shapeA,shape
 }
 
 SpaceMailman.Game.prototype.controlPlayer = function() {
-    if(player.sprite.body == null)
+    if(player.sprite.body == null || player.dead)
         return;
 
     if (cursors.left.isDown)
-        player.sprite.body.rotateLeft(100);
+        player.sprite.body.angularVelocity = -300;
     else if (cursors.right.isDown)
-        player.sprite.body.rotateRight(100);
+        player.sprite.body.angularVelocity = 300;
     else
-        player.sprite.body.setZeroRotation();
+        player.sprite.body.angularVelocity = 0;
 
     if (cursors.up.isDown) {
-        player.sprite.body.thrust(150);
+        game.physics.arcade.accelerationFromRotation(player.sprite.rotation+Math.PI/-2, 200, player.sprite.body.acceleration);
         player.sprite.getChildAt(0).visible = true;
     }
     else {
         player.sprite.getChildAt(0).visible = false;
-        if(cursors.down.isDown) player.sprite.body.reverse(150);
+        player.sprite.body.acceleration.set(0);
     }
 }

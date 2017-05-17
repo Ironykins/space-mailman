@@ -9,7 +9,8 @@ var bg, bgnear;
 var asteroidCount;
 var maxAsteroids = 20;
 var asteroids;
-var debug = true;
+var shields;
+var debug = false;
 var playerCollisionGroup, asteroidCollisionGroup;
 
 SpaceMailman.Game = function (game) {};
@@ -54,65 +55,72 @@ SpaceMailman.Game.prototype = {
 		bgnear.fixedToCamera = true;
 		bgnear.tint = 0x888888;
 
-		//  Enable p2 physics
-		this.physics.startSystem(Phaser.Physics.P2JS);
-		this.physics.p2.defaultRestitution = 0.8;
-		this.physics.p2.setImpactEvents(true);
-		this.physics.p2.restitution = 0.8;
-
+		//  Enable physics
+		this.physics.startSystem(Phaser.Physics.ARCADE);
+/*
 		playerCollisionGroup = this.physics.p2.createCollisionGroup();
 		asteroidCollisionGroup = this.physics.p2.createCollisionGroup();
 		shieldCollisionGroup = this.physics.p2.createCollisionGroup();
+*/		
+		shields = this.add.group();
+		shields.enableBody = true;
 		
 		// First base + shield
 		base1 = game.add.sprite(game.world.centerX, game.world.centerY, 'station1')
 		base1.anchor.set(0.5);
 		base1.scale.set(0.5);
-        shield = game.add.sprite(game.world.centerX,game.world.centerY,'shield');
-		shield.anchor.set(0.5);
-        shield.smoothed = false;
-        this.physics.p2.enable(shield,debug);
-		shield.body.static = true
-        shield.body.setCircle(256,0,0,0);
-        shield.body.setCollisionGroup(shieldCollisionGroup);
-        shield.body.collides([asteroidCollisionGroup],this.shieldHitAsteroid,this);
+		this.createShield(game.world.centerX,game.world.centerY,1)
+		this.createShield(game.world.centerX-512,game.world.centerY-512,0.5)
+
+        // shield = shields.create(game.world.centerX,game.world.centerY,'shield');
+		// shield.anchor.set(0.5);
+        // shield.smoothed = false;
+		// // this.physics.enable(shield, Phaser.Physics.ARCADE, debug);
+		// shield.body.immovable = true
+		// shield.body.allowRotation = false;
+        // shield.body.setCircle(256,0,0,0);
 
 		// Second base + shield
 		base2 = game.add.sprite(game.world.centerX-512, game.world.centerY-512, 'station2')
 		base2.anchor.set(0.5);
-        shield2 = game.add.sprite(game.world.centerX-512,game.world.centerY-512,'shield');
-		shield2.anchor.set(0.5);
-		shield2.scale.set(0.5);
-		shield2.smoothed = false;
 
-        this.physics.p2.enable(shield2,debug);
-		shield2.body.static = true;
-        shield2.body.setCircle(128,0,0,0);
-        shield2.body.setCollisionGroup(shieldCollisionGroup);
-        shield2.body.collides([asteroidCollisionGroup],this.shieldHitAsteroid,this);
 
-		this.physics.p2.updateBoundsCollisionGroup();
+		// this.physics.p2.updateBoundsCollisionGroup();
 
 		//Create Player
 		this.spawnPlayer();
 
 		asteroids = this.add.group();
+		asteroids.enableBody = true;
 		for (i=0;i<50;i++) {
-			var x = Math.floor(Math.random() * this.world.width);
-			var y = Math.floor(Math.random() * this.world.height);
-            this.spawnAsteroid(x,y)
+            this.spawnAsteroid(game.world.randomX,game.world.randomY)
 		}
-
         this.createHUD();
     },
 
-    shieldHitAsteroid: function(bodyA,bodyB,shapeA,shapeB) {
-		var angle = new Phaser.Point(bodyA.x-bodyB.x,bodyA.y-bodyB.y).normalize();
-		bodyB.applyImpulse([angle.x * 10, angle.y * 10])
+	createShield: function(x,y,scale) {
+		var spriteRad = 256;
+		shield = shields.create(x,y,'shield');
+		shield.anchor.set(0.5);
+		shield.scale.set(scale);
+		shield.smoothed = false;
+		shield.body.immovable = true
+		shield.body.allowRotation = false;
+		shield.body.bounce.set(5);
+		shield.body.setCircle(scale*spriteRad,((1-scale)*spriteRad),((1-scale)*spriteRad));
+	},
+
+    shieldHitAsteroid: function(first,second) {
+		var angle = new Phaser.Point(first.body.x-second.body.x,first.body.y-second.body.y).normalize();
+		second.body.velocity.subtract(angle.x*500,angle.y*500);
     },
 
     update: function () {
         this.controlPlayer();
+
+		this.physics.arcade.collide(player.sprite, asteroids, this.playerHitAsteroid, null, this);
+		this.physics.arcade.collide(shields, asteroids, this.shieldHitAsteroid, null, this);
+		this.physics.arcade.collide(asteroids);
 
 		//Parallax Scrolling
 		bgfar.tilePosition.set(this.camera.x * -0.3, this.camera.y * -0.3);
@@ -124,6 +132,13 @@ SpaceMailman.Game.prototype = {
         if(debug) {
             this.game.debug.cameraInfo(game.camera, 32, 32);
             this.game.debug.spriteCoords(player.sprite, 32, 500);
+			this.game.debug.body(player.sprite)
+
+			for (i=0;i<asteroids.children.length;i++)
+				this.game.debug.body(asteroids.children[i])
+			
+			for (i=0;i<shields.children.length;i++)
+				this.game.debug.body(shields.children[i])
         }
 	}
 };

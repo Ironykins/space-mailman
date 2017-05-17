@@ -38,18 +38,14 @@ SpaceMailman.Game.prototype.spawnAsteroid = function(x,y,scale) {
     }
 
     ast = asteroids.create(x, y, 'asteroids', astSprite);
-    this.physics.p2.enable(ast,debug);
     ast.body.collideWorldBounds = true;
-    ast.body.setCircle(radius,0,0,0);
-    ast.body.damping = 0.01;
+    ast.body.setCircle(radius,-(radius/2),-(radius/2));
+    ast.body.drag.set(0.01);
+    ast.body.bounce.set(0.5);
     ast.scale.set(2);
     ast.asteroidSize = scale;
     ast.smoothed = false;
-    ast.body.applyImpulse([(Math.random() * 15)-7.5,(Math.random() * 15)-7.5],0,0)
-    ast.body.setCollisionGroup(asteroidCollisionGroup);
-
-    //The first parameter is either an array or a single collision group.
-    ast.body.collides([shieldCollisionGroup, asteroidCollisionGroup, playerCollisionGroup]);
+    ast.body.velocity.set(600*(Math.random()-0.5),600*(Math.random()-0.5));
 }
 
 // Destroys an asteroid. Breaks it down.
