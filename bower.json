@@ -1,0 +1,8 @@
+{
+  "name": "space-mailman",
+  "version": "0.0.1",
+  "dependencies": {
+    "phaser-ce": "~2.7.8"
+  },
+  "private": true
+}

@@ -9,7 +9,7 @@ var bg, bgnear;
 var asteroidCount;
 var maxAsteroids = 20;
 var asteroids;
-var debug = false;
+var debug = true;
 var playerCollisionGroup, asteroidCollisionGroup;
 
 SpaceMailman.Game = function (game) {};
@@ -29,7 +29,7 @@ SpaceMailman.Game.prototype = {
     },
 
     create: function () {
-		this.world.setBounds(0, 0, 1920, 1920);
+		this.world.setBounds(0, 0, 4096, 4096);
 		cursors = this.input.keyboard.createCursorKeys();
 		fireButton = this.input.keyboard.addKey(Phaser.KeyCode.SPACEBAR);
 
@@ -63,24 +63,41 @@ SpaceMailman.Game.prototype = {
 		playerCollisionGroup = this.physics.p2.createCollisionGroup();
 		asteroidCollisionGroup = this.physics.p2.createCollisionGroup();
 		shieldCollisionGroup = this.physics.p2.createCollisionGroup();
+		
+		// First base + shield
+		base1 = game.add.sprite(game.world.centerX, game.world.centerY, 'station1')
+		base1.anchor.set(0.5);
+		base1.scale.set(0.5);
+        shield = game.add.sprite(game.world.centerX,game.world.centerY,'shield');
+		shield.anchor.set(0.5);
+        shield.smoothed = false;
+        this.physics.p2.enable(shield,debug);
+		shield.body.static = true
+        shield.body.setCircle(256,0,0,0);
+        shield.body.setCollisionGroup(shieldCollisionGroup);
+        shield.body.collides([asteroidCollisionGroup],this.shieldHitAsteroid,this);
+
+		// Second base + shield
+		base2 = game.add.sprite(game.world.centerX-512, game.world.centerY-512, 'station2')
+		base2.anchor.set(0.5);
+        shield2 = game.add.sprite(game.world.centerX-512,game.world.centerY-512,'shield');
+		shield2.anchor.set(0.5);
+		shield2.scale.set(0.5);
+		shield2.smoothed = false;
+
+        this.physics.p2.enable(shield2,debug);
+		shield2.body.static = true;
+        shield2.body.setCircle(128,0,0,0);
+        shield2.body.setCollisionGroup(shieldCollisionGroup);
+        shield2.body.collides([asteroidCollisionGroup],this.shieldHitAsteroid,this);
+
+		this.physics.p2.updateBoundsCollisionGroup();
 
 		//Create Player
 		this.spawnPlayer();
 
-        //Create Shield
-        shield = game.add.sprite(game.world.centerX,game.world.centerY,'shield');
-        this.physics.p2.enable(shield,debug);
-		shield.anchor.set(0.5);
-		shield.scale.set(8);
-        shield.smoothed = false;
-        shield.body.setCircle(132,0,0,0);
-        shield.body.setCollisionGroup(shieldCollisionGroup);
-        shield.body.collides([asteroidCollisionGroup],this.shieldHitAsteroid,this);
-		shield.tint = 0x222277;
-        shield.body.static = true;
-		this.physics.p2.updateBoundsCollisionGroup();
 		asteroids = this.add.group();
-		for (i=0;i<30;i++) {
+		for (i=0;i<50;i++) {
 			var x = Math.floor(Math.random() * this.world.width);
 			var y = Math.floor(Math.random() * this.world.height);
             this.spawnAsteroid(x,y)
@@ -89,8 +106,9 @@ SpaceMailman.Game.prototype = {
         this.createHUD();
     },
 
-    shieldHitAsteroid: function(body,bodyB,shapeA,shapeB,equation) {
-        this.destroyAsteroid(bodyB);
+    shieldHitAsteroid: function(bodyA,bodyB,shapeA,shapeB) {
+		var angle = new Phaser.Point(bodyA.x-bodyB.x,bodyA.y-bodyB.y).normalize();
+		bodyB.applyImpulse([angle.x * 10, angle.y * 10])
     },
 
     update: function () {
