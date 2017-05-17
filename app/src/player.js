@@ -25,7 +25,7 @@ SpaceMailman.Game.prototype.spawnPlayer = function() {
     player.sprite.body.setCircle(12,4,4);
     player.sprite.body.collideWorldBounds = true;
     player.sprite.body.drag.set(30);
-    player.sprite.body.maxVelocity.set(300);
+    player.sprite.body.maxVelocity.set(200);
     
     player.sprite.addChildAt(flare,0);
     game.camera.follow(player.sprite);

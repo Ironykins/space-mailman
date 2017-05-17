@@ -57,35 +57,29 @@ SpaceMailman.Game.prototype = {
 
 		//  Enable physics
 		this.physics.startSystem(Phaser.Physics.ARCADE);
-/*
-		playerCollisionGroup = this.physics.p2.createCollisionGroup();
-		asteroidCollisionGroup = this.physics.p2.createCollisionGroup();
-		shieldCollisionGroup = this.physics.p2.createCollisionGroup();
-*/		
 		shields = this.add.group();
 		shields.enableBody = true;
 		
-		// First base + shield
+		// Build Bases
 		base1 = game.add.sprite(game.world.centerX, game.world.centerY, 'station1')
 		base1.anchor.set(0.5);
 		base1.scale.set(0.5);
-		this.createShield(game.world.centerX,game.world.centerY,1)
-		this.createShield(game.world.centerX-512,game.world.centerY-512,0.5)
-
-        // shield = shields.create(game.world.centerX,game.world.centerY,'shield');
-		// shield.anchor.set(0.5);
-        // shield.smoothed = false;
-		// // this.physics.enable(shield, Phaser.Physics.ARCADE, debug);
-		// shield.body.immovable = true
-		// shield.body.allowRotation = false;
-        // shield.body.setCircle(256,0,0,0);
-
-		// Second base + shield
+		this.createShield(game.world.centerX,game.world.centerY,0.75)
 		base2 = game.add.sprite(game.world.centerX-512, game.world.centerY-512, 'station2')
 		base2.anchor.set(0.5);
-
-
-		// this.physics.p2.updateBoundsCollisionGroup();
+		this.createShield(game.world.centerX-512,game.world.centerY-512,0.5)
+		base3 = game.add.sprite(game.world.centerX+512, game.world.centerY+512, 'station3')
+		base3.anchor.set(0.5);
+		base3.scale.set(0.5);
+		this.createShield(game.world.centerX+512,game.world.centerY+512,0.5)
+		base4 = game.add.sprite(game.world.centerX-512, game.world.centerY+512, 'station4')
+		base4.anchor.set(0.5);
+		base4.scale.set(0.5);
+		this.createShield(game.world.centerX-512,game.world.centerY+512,0.5)
+		base5 = game.add.sprite(game.world.centerX+512, game.world.centerY-512, 'station5')
+		base5.anchor.set(0.5);
+		base5.scale.set(0.5);
+		this.createShield(game.world.centerX+512,game.world.centerY-512,0.5)
 
 		//Create Player
 		this.spawnPlayer();
@@ -112,7 +106,7 @@ SpaceMailman.Game.prototype = {
 
     shieldHitAsteroid: function(first,second) {
 		var angle = new Phaser.Point(first.body.x-second.body.x,first.body.y-second.body.y).normalize();
-		second.body.velocity.subtract(angle.x*500,angle.y*500);
+		second.body.velocity.subtract(angle.x*300,angle.y*300);
     },
 
     update: function () {
