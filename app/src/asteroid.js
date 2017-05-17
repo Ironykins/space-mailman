@@ -38,44 +38,32 @@ SpaceMailman.Game.prototype.spawnAsteroid = function(x,y,scale) {
     }
 
     ast = asteroids.create(x, y, 'asteroids', astSprite);
-    this.physics.p2.enable(ast,debug);
     ast.body.collideWorldBounds = true;
-    ast.body.setCircle(radius,0,0,0);
-    ast.body.damping = 0.01;
+    ast.body.setCircle(radius,-(radius/2),-(radius/2));
+    ast.body.drag.set(0.01);
+    ast.body.bounce.set(0.5);
     ast.scale.set(2);
     ast.asteroidSize = scale;
     ast.smoothed = false;
-    ast.body.setCollisionGroup(asteroidCollisionGroup);
-
-    //The first parameter is either an array or a single collision group.
-    ast.body.collides([shieldCollisionGroup, asteroidCollisionGroup, playerCollisionGroup]);
-    return ast;
+    ast.body.velocity.set(600*(Math.random()-0.5),600*(Math.random()-0.5));
 }
 
 // Destroys an asteroid. Breaks it down.
 SpaceMailman.Game.prototype.destroyAsteroid = function(asteroid) {
-    var parent_velocity = asteroid.sprite.body.velocity;
     var newX = asteroid.x;
     var newY = asteroid.y;
-    var newSize = asteroid.sprite.asteroidSize - 1;
+    var newSize = asteroid.asteroidSize - 1;
 
     //Destroy the asteroid.
     this.explodeAt(asteroid.x,asteroid.y);
-    asteroid.sprite.destroy();
     asteroid.destroy();
 
     //If we're not at the smallest size, spawn some smaller ones.
     if(newSize < 1)
         return;
 
-    var ast1 = this.spawnAsteroid(newX+64,newY,newSize);
-    var ast2 = this.spawnAsteroid(newX-64,newY,newSize);
-
-    // Small bits of asteroid.
-    ast1.body.velocity.x = parent_velocity.x;
-    ast1.body.velocity.y = parent_velocity.y;
-    ast2.body.velocity.x = parent_velocity.x;
-    ast2.body.velocity.y = parent_velocity.y;
+    this.spawnAsteroid(newX+64,newY,newSize);
+    this.spawnAsteroid(newX-64,newY,newSize);
 
     player.score += 1;
     this.updateHUD();

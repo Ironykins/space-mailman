@@ -30,11 +30,19 @@ SpaceMailman.Preloader.prototype = {
 		//Load all our assets. Progress bar will update as we load these.
 		this.load.image('player_ship', 'app/sprite/ship.png');
 		this.load.image('ship_flare', 'app/sprite/ship_thrust.png');
-		this.load.image('shield', 'app/sprite/shield_bubble.png');
-		//this.load.image('bullet', 'app/sprite/shmup-bullet.png');
+		this.load.image('bubble', 'app/sprite/shield_bubble.png');
+		this.load.image('shield', 'app/sprite/spr_shield.png'); //https://opengameart.org/content/shield-effect
+		this.load.image('bullet', 'app/sprite/shmup-bullet.png');
 		this.load.atlas('asteroids', 'app/sprite/asteroids.png', 'app/sprite/asteroids.json', Phaser.Loader.TEXTURE_ATLAS_JSON_HASH);
 		this.load.spritesheet('explosion', 'app/sprite/explosion.png', 96, 96, 12);
         this.load.bitmapFont('carrier_command', 'app/font/carrier_command.png', 'app/font/carrier_command.xml');
+
+		//Space Stations
+		this.load.image('station1', 'app/sprite/station/station1.png');
+		this.load.image('station2', 'app/sprite/station/station2.png');
+		this.load.image('station3', 'app/sprite/station/station3.png');
+		this.load.image('station4', 'app/sprite/station/station4.png');
+		this.load.image('station5', 'app/sprite/station/station5.png');
 	},
 
 	create: function () {
