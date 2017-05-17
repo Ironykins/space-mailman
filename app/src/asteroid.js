@@ -52,11 +52,10 @@ SpaceMailman.Game.prototype.spawnAsteroid = function(x,y,scale) {
 SpaceMailman.Game.prototype.destroyAsteroid = function(asteroid) {
     var newX = asteroid.x;
     var newY = asteroid.y;
-    var newSize = asteroid.sprite.asteroidSize - 1;
+    var newSize = asteroid.asteroidSize - 1;
 
     //Destroy the asteroid.
     this.explodeAt(asteroid.x,asteroid.y);
-    asteroid.sprite.destroy();
     asteroid.destroy();
 
     //If we're not at the smallest size, spawn some smaller ones.

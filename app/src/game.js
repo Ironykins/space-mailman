@@ -114,6 +114,8 @@ SpaceMailman.Game.prototype = {
 
 		this.physics.arcade.collide(player.sprite, asteroids, this.playerHitAsteroid, null, this);
 		this.physics.arcade.collide(shields, asteroids, this.shieldHitAsteroid, null, this);
+		this.physics.arcade.collide(player.weapon.bullets, asteroids, (bullet,asteroid) => {bullet.kill();this.destroyAsteroid(asteroid);}, null, this);
+		this.physics.arcade.collide(player.weapon.bullets, shields, (bullet) => {bullet.kill()}, null, this);
 		this.physics.arcade.collide(asteroids);
 
 		//Parallax Scrolling
