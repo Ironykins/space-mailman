@@ -88,7 +88,7 @@ SpaceMailman.Game.prototype = {
 		asteroids.enableBody = true;
 		for (i=0;i<50;i++) {
 			var ast = this.spawnAsteroid(game.world.randomX,game.world.randomY)
-			// ast.body.velocity.add(600*(Math.random()-0.5),600*(Math.random()-0.5));
+			ast.body.velocity.add(600*(Math.random()-0.5),600*(Math.random()-0.5));
 		}
         this.createHUD();
     },

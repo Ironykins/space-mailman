@@ -65,8 +65,8 @@ SpaceMailman.Game.prototype.destroyAsteroid = function(asteroid, body2) {
     // Create the asteroids.
     // var shotVector = new Phaser.Point(position.x - body2.position.x, position.y - body2.position.y).normalize();
     var shotVector = body2.body.newVelocity.normalize();
-    var pos1 = Phaser.Point.add(asteroid.position, Phaser.Point.multiply(Phaser.Point.rotate(shotVector,0,0,Math.PI/8),new Phaser.Point(50,50)));
-    var pos2 = Phaser.Point.add(asteroid.position, Phaser.Point.multiply(Phaser.Point.rotate(shotVector,0,0,-Math.PI/8),new Phaser.Point(50,50)));
+    var pos1 = Phaser.Point.add(asteroid.position, Phaser.Point.multiply(Phaser.Point.rotate(shotVector,0,0,Math.PI/8),new Phaser.Point(15,15)));
+    var pos2 = Phaser.Point.add(asteroid.position, Phaser.Point.multiply(Phaser.Point.rotate(shotVector,0,0,-Math.PI/8),new Phaser.Point(15,15)));
 
     var ast1 = this.spawnAsteroid(pos1.x, pos1.y, newSize);
     var ast2 = this.spawnAsteroid(pos2.x, pos2.y, newSize);
