@@ -313,6 +313,7 @@ Phaser.Tilemap.prototype = {
         if (idx === null && this.format === Phaser.Tilemap.TILED_JSON)
         {
             console.warn('Phaser.Tilemap.addTilesetImage: No data found in the JSON matching the tileset name: "' + tileset + '"');
+            console.log('Tilesets: ', this.tilesets);
             return null;
         }
 
@@ -397,18 +398,21 @@ Phaser.Tilemap.prototype = {
     * @param {Phaser.Group} [group=Phaser.World] - Group to add the Sprite to. If not specified it will be added to the World group.
     * @param {object} [CustomClass=Phaser.Sprite] - If you wish to create your own class, rather than Phaser.Sprite, pass the class here. Your class must extend Phaser.Sprite and have the same constructor parameters.
     * @param {boolean} [adjustY=true] - By default the Tiled map editor uses a bottom-left coordinate system. Phaser uses top-left. So most objects will appear too low down. This parameter moves them up by their height.
+    * @param {boolean} [adjustSize=true] - By default the width and height of the objects are transferred to the sprite. This parameter controls that behavior.
     */
-    createFromObjects: function (name, gid, key, frame, exists, autoCull, group, CustomClass, adjustY) {
+    createFromObjects: function (name, gid, key, frame, exists, autoCull, group, CustomClass, adjustY, adjustSize) {
 
         if (exists === undefined) { exists = true; }
         if (autoCull === undefined) { autoCull = false; }
         if (group === undefined) { group = this.game.world; }
         if (CustomClass === undefined) { CustomClass = Phaser.Sprite; }
         if (adjustY === undefined) { adjustY = true; }
+        if (adjustSize === undefined) { adjustSize = true; }
 
         if (!this.objects[name])
         {
             console.warn('Tilemap.createFromObjects: Invalid objectgroup name given: ' + name);
+            console.log('Objects: ', this.objects);
             return;
         }
 
@@ -435,18 +439,21 @@ Phaser.Tilemap.prototype = {
                 var sprite = new CustomClass(this.game, parseFloat(obj.x, 10), parseFloat(obj.y, 10), key, frame);
 
                 sprite.name = obj.name;
-                sprite.visible = obj.visible;
                 sprite.autoCull = autoCull;
                 sprite.exists = exists;
+                sprite.visible = obj.visible;
 
-                if (obj.width)
+                if (adjustSize)
                 {
-                    sprite.width = obj.width;
-                }
+                    if (obj.width)
+                    {
+                        sprite.width = obj.width;
+                    }
 
-                if (obj.height)
-                {
-                    sprite.height = obj.height;
+                    if (obj.height)
+                    {
+                        sprite.height = obj.height;
+                    }
                 }
 
                 if (obj.rotation)
@@ -594,7 +601,8 @@ Phaser.Tilemap.prototype = {
 
         if (index === null || index > this.layers.length)
         {
-            console.warn('Tilemap.createLayer: Invalid layer ID given: ' + index);
+            console.warn('Tilemap.createLayer: Invalid layer ID given: "' + layer + '"');
+            console.log('Layers: ', this.layers);
             return;
         }
 
@@ -801,15 +809,29 @@ Phaser.Tilemap.prototype = {
 
         if (typeof indexes === 'number')
         {
-            //  This may seem a bit wasteful, because it will cause empty array elements to be created, but the look-up cost is much
-            //  less than having to iterate through the callbacks array hunting down tile indexes each frame, so I'll take the small memory hit.
-            this.layers[layer].callbacks[indexes] = { callback: callback, callbackContext: callbackContext };
+            if (callback === null)
+            {
+                delete this.layers[layer].callbacks[indexes];
+            }
+            else
+            {
+                //  This may seem a bit wasteful, because it will cause empty array elements to be created, but the look-up cost is much
+                //  less than having to iterate through the callbacks array hunting down tile indexes each frame, so I'll take the small memory hit.
+                this.layers[layer].callbacks[indexes] = { callback: callback, callbackContext: callbackContext };
+            }
         }
         else
         {
             for (var i = 0, len = indexes.length; i < len; i++)
             {
-                this.layers[layer].callbacks[indexes[i]] = { callback: callback, callbackContext: callbackContext };
+                if (callback === null)
+                {
+                    delete this.layers[layer].callbacks[indexes[i]];
+                }
+                else
+                {
+                    this.layers[layer].callbacks[indexes[i]] = { callback: callback, callbackContext: callbackContext };
+                }
             }
         }
 
@@ -854,6 +876,8 @@ Phaser.Tilemap.prototype = {
     * The `collides` parameter controls if collision will be enabled (true) or disabled (false).
     *
     * Collision-enabled tiles can be collided against Sprites using {@link Phaser.Physics.Arcade#collide}.
+    *
+    * You can verify the collision faces by enabling {@link Phaser.TilemapLayer#debug}.
     *
     * @method Phaser.Tilemap#setCollision
     * @param {number|array} indexes - Either a single tile index, or an array of tile IDs to be checked for collision.
@@ -1042,7 +1066,14 @@ Phaser.Tilemap.prototype = {
         }
         else if (typeof layer === 'string')
         {
+            var layerArg = layer;
+
             layer = this.getLayerIndex(layer);
+
+            if (layer === null)
+            {
+                console.warn('No such layer name: ' + layerArg);
+            }
         }
         else if (layer instanceof Phaser.TilemapLayer)
         {
@@ -1329,7 +1360,7 @@ Phaser.Tilemap.prototype = {
     * If you pass `null` as the tile it will pass your call over to Tilemap.removeTile instead.
     *
     * @method Phaser.Tilemap#putTile
-    * @param {Phaser.Tile|number|null} tile - The index of this tile to set or a Phaser.Tile object. If null the tile is removed from the map.
+    * @param {Phaser.Tile|number|null} tile - The index of this tile to set or a Phaser.Tile object. If a Tile object, all of its data will be copied. If null the tile is removed from the map.
     * @param {number} x - X position to place the tile (given in tile units, not pixels)
     * @param {number} y - Y position to place the tile (given in tile units, not pixels)
     * @param {number|string|Phaser.TilemapLayer} [layer] - The layer to modify.
@@ -1651,6 +1682,7 @@ Phaser.Tilemap.prototype = {
 
     /**
     * Scans the given area for tiles with an index matching tileA and swaps them with tileB.
+    * Only the tile indexes are modified.
     *
     * @method Phaser.Tilemap#swap
     * @param {number} tileA - First tile index.
@@ -1769,6 +1801,7 @@ Phaser.Tilemap.prototype = {
 
     /**
     * Randomises a set of tiles in a given area.
+    * Only the tile indexes are modified.
     *
     * @method Phaser.Tilemap#random
     * @param {number} x - X position of the top left of the area to operate one, given in tiles, not pixels.
@@ -1814,6 +1847,7 @@ Phaser.Tilemap.prototype = {
 
     /**
     * Shuffles a set of tiles in a given area. It will only randomise the tiles in that area, so if they're all the same nothing will appear to have changed!
+    * Only the tile indexes are modified.
     *
     * @method Phaser.Tilemap#shuffle
     * @param {number} x - X position of the top left of the area to operate one, given in tiles, not pixels.
@@ -1856,6 +1890,7 @@ Phaser.Tilemap.prototype = {
 
     /**
     * Fills the given area with the specified tile.
+    * Only the tile indexes are modified.
     *
     * @method Phaser.Tilemap#fill
     * @param {number} index - The index of the tile that the area will be filled with.

@@ -436,8 +436,9 @@ Phaser.Mouse.prototype = {
         //  No matter what, we must cancel the left and right buttons
 
         this.input.mousePointer.stop(event);
-        this.input.mousePointer.leftButton.stop(event);
-        this.input.mousePointer.rightButton.stop(event);
+
+        // Clear the button states (again?)
+        this.input.mousePointer.resetButtons();
 
     },
 
@@ -473,6 +474,14 @@ Phaser.Mouse.prototype = {
             event['identifier'] = 0;
 
             this.input.mousePointer.stop(event);
+        }
+
+        for (var i in this.input.interactiveItems.list)
+        {
+            if (this.input.interactiveItems.list[i].enabled === true)
+            {
+                this.input.interactiveItems.list[i]._pointerOutHandler(this.input.mousePointer);
+            }
         }
 
     },

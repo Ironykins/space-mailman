@@ -64,7 +64,7 @@ SpaceMailman.Game.prototype = {
 		base1 = game.add.sprite(game.world.centerX, game.world.centerY, 'station1')
 		base1.anchor.set(0.5);
 		base1.scale.set(0.5);
-		this.createShield(game.world.centerX,game.world.centerY,0.75)
+		this.createShield(game.world.centerX,game.world.centerY, 0.8)
 		base2 = game.add.sprite(game.world.centerX-512, game.world.centerY-512, 'station2')
 		base2.anchor.set(0.5);
 		this.createShield(game.world.centerX-512,game.world.centerY-512,0.5)
@@ -87,7 +87,8 @@ SpaceMailman.Game.prototype = {
 		asteroids = this.add.group();
 		asteroids.enableBody = true;
 		for (i=0;i<50;i++) {
-            this.spawnAsteroid(game.world.randomX,game.world.randomY)
+			var ast = this.spawnAsteroid(game.world.randomX,game.world.randomY)
+			// ast.body.velocity.add(600*(Math.random()-0.5),600*(Math.random()-0.5));
 		}
         this.createHUD();
     },
@@ -101,7 +102,7 @@ SpaceMailman.Game.prototype = {
 		shield.body.immovable = true
 		shield.body.allowRotation = false;
 		shield.body.bounce.set(5);
-		shield.body.setCircle(scale*spriteRad,((1-scale)*spriteRad),((1-scale)*spriteRad));
+		shield.body.setCircle(spriteRad);
 	},
 
     shieldHitAsteroid: function(first,second) {
@@ -114,7 +115,7 @@ SpaceMailman.Game.prototype = {
 
 		this.physics.arcade.collide(player.sprite, asteroids, this.playerHitAsteroid, null, this);
 		this.physics.arcade.collide(shields, asteroids, this.shieldHitAsteroid, null, this);
-		this.physics.arcade.collide(player.weapon.bullets, asteroids, (bullet,asteroid) => {bullet.kill();this.destroyAsteroid(asteroid);}, null, this);
+		this.physics.arcade.collide(player.weapon.bullets, asteroids, (bullet,asteroid) => {this.destroyAsteroid(asteroid,bullet);bullet.kill();}, null, this);
 		this.physics.arcade.collide(player.weapon.bullets, shields, (bullet) => {bullet.kill()}, null, this);
 		this.physics.arcade.collide(asteroids);
 

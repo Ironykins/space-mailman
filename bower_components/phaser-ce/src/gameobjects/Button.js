@@ -25,7 +25,7 @@
 * @param {number} [x=0] - X position of the Button.
 * @param {number} [y=0] - Y position of the Button.
 * @param {string} [key] - The image key (in the Game.Cache) to use as the texture for this Button.
-* @param {function} [callback] - The function to call when this Button is pressed.
+* @param {function} [callback] - The function to call when this Button is pressed, receiving `this` (the Button), `pointer` (the Pointer causing the input), and `isOver` (whether the Pointer is still on the Button). See {@link Phaser.Events#onInputUp}.
 * @param {object} [callbackContext] - The context in which the callback will be called (usually 'this').
 * @param {string|integer} [overFrame] - The frame / frameName when the button is in the Over state.
 * @param {string|integer} [outFrame] - The frame / frameName when the button is in the Out state.
@@ -142,24 +142,28 @@ Phaser.Button = function (game, x, y, key, callback, callbackContext, overFrame,
     /**
     * The Signal (or event) dispatched when this Button is in an Over state.
     * @property {Phaser.Signal} onInputOver
+    * @see Phaser.Events#onInputOver
     */
     this.onInputOver = new Phaser.Signal();
 
     /**
     * The Signal (or event) dispatched when this Button is in an Out state.
     * @property {Phaser.Signal} onInputOut
+    * @see Phaser.Events#onInputOut
     */
     this.onInputOut = new Phaser.Signal();
 
     /**
     * The Signal (or event) dispatched when this Button is in an Down state.
     * @property {Phaser.Signal} onInputDown
+    * @see Phaser.Events#onInputDown
     */
     this.onInputDown = new Phaser.Signal();
 
     /**
     * The Signal (or event) dispatched when this Button is in an Up state.
     * @property {Phaser.Signal} onInputUp
+    * @see Phaser.Events#onInputUp
     */
     this.onInputUp = new Phaser.Signal();
 
@@ -179,8 +183,8 @@ Phaser.Button = function (game, x, y, key, callback, callbackContext, overFrame,
     *
     * @property {Phaser.PointerMode?} justReleasedPreventsOver=ACTIVE_CURSOR
     */
-    this.justReleasedPreventsOver = Phaser.PointerMode.TOUCH;
-    
+    this.justReleasedPreventsOver = Phaser.PointerMode.CONTACT;
+
     /**
     * When true the the texture frame will not be automatically switched on up/down/over/out events.
     * @property {boolean} freezeFrames
@@ -217,8 +221,6 @@ Phaser.Button = function (game, x, y, key, callback, callbackContext, overFrame,
     this.events.onInputDown.add(this.onInputDownHandler, this);
     this.events.onInputUp.add(this.onInputUpHandler, this);
 
-    this.events.onRemovedFromWorld.add(this.removedFromWorld, this);
-
 };
 
 Phaser.Button.prototype = Object.create(Phaser.Image.prototype);
@@ -238,18 +240,6 @@ var STATE_UP = 'Up';
 Phaser.Button.prototype.clearFrames = function () {
 
     this.setFrames(null, null, null, null);
-
-};
-
-/**
-* Called when this Button is removed from the World.
-*
-* @method Phaser.Button#removedFromWorld
-* @protected
-*/
-Phaser.Button.prototype.removedFromWorld = function () {
-
-    this.inputEnabled = false;
 
 };
 
@@ -555,6 +545,7 @@ Phaser.Button.prototype.onInputDownHandler = function (sprite, pointer) {
 * @protected
 * @param {Phaser.Button} sprite - The Button that the event occurred on.
 * @param {Phaser.Pointer} pointer - The Pointer that activated the Button.
+* @param {boolean} isOver - Is the Pointer still over the Game Object?
 */
 Phaser.Button.prototype.onInputUpHandler = function (sprite, pointer, isOver) {
 

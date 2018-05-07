@@ -61,6 +61,21 @@ Phaser.Line.prototype = {
     },
 
     /**
+    * Sets the line to match the x/y coordinates of the two given points.
+    *
+    * @param {any} start - A {@link Phaser.Point} or point-like object.
+    * @param {any} end - A {@link Phaser.Point} or point-like object.
+    * @return {Phaser.Line} - This line object.
+    */
+    fromPoints: function (start, end) {
+
+        this.setTo(start.x, start.y, end.x, end.y);
+
+        return this;
+
+    },
+
+    /**
     * Sets the line to match the x/y coordinates of the two given sprites.
     * Can optionally be calculated from their center coordinates.
     *
@@ -79,7 +94,7 @@ Phaser.Line.prototype = {
             return this.setTo(startSprite.centerX, startSprite.centerY, endSprite.centerX, endSprite.centerY);
         }
 
-        return this.setTo(startSprite.x, startSprite.y, endSprite.x, endSprite.y);
+        return this.fromPoints(startSprite, endSprite);
 
     },
 
@@ -222,35 +237,37 @@ Phaser.Line.prototype = {
     },
 
     /**
-    * Tests if the given coordinates fall on this line. See pointOnSegment to test against just the line segment.
+    * Tests if the given coordinates fall on this line. See {@link #pointOnSegment} to test against just the line segment.
     *
     * @method Phaser.Line#pointOnLine
     * @param {number} x - The line to check against this one.
     * @param {number} y - The line to check against this one.
+    * @param {number} [epsilon=0] - Range for a fuzzy comparison, e.g., 0.0001.
     * @return {boolean} True if the point is on the line, false if not.
     */
-    pointOnLine: function (x, y) {
+    pointOnLine: function (x, y, epsilon) {
 
-        return ((x - this.start.x) * (this.end.y - this.start.y) === (this.end.x - this.start.x) * (y - this.start.y));
+        return Phaser.Math.fuzzyEqual((x - this.start.x) * (this.end.y - this.start.y), (this.end.x - this.start.x) * (y - this.start.y), epsilon || 0);
 
     },
 
     /**
-    * Tests if the given coordinates fall on this line and within the segment. See pointOnLine to test against just the line.
+    * Tests if the given coordinates fall on this line and within the segment. See {@link #pointOnLine} to test against just the line.
     *
     * @method Phaser.Line#pointOnSegment
     * @param {number} x - The line to check against this one.
     * @param {number} y - The line to check against this one.
+    * @param {number} [epsilon=0] - Range for a fuzzy comparison, e.g., 0.0001.
     * @return {boolean} True if the point is on the line and segment, false if not.
     */
-    pointOnSegment: function (x, y) {
+    pointOnSegment: function (x, y, epsilon) {
 
         var xMin = Math.min(this.start.x, this.end.x);
         var xMax = Math.max(this.start.x, this.end.x);
         var yMin = Math.min(this.start.y, this.end.y);
         var yMax = Math.max(this.start.y, this.end.y);
 
-        return (this.pointOnLine(x, y) && (x >= xMin && x <= xMax) && (y >= yMin && y <= yMax));
+        return (this.pointOnLine(x, y, epsilon) && (x >= xMin && x <= xMax) && (y >= yMin && y <= yMax));
 
     },
 
@@ -336,7 +353,7 @@ Phaser.Line.prototype = {
     /**
      * Returns a new Line object with the same values for the start and end properties as this Line object.
      * @method Phaser.Line#clone
-     * @param {Phaser.Line} output - Optional Line object. If given the values will be set into the object, otherwise a brand new Line object will be created and returned.
+     * @param {Phaser.Line} [output] - Optional Line object. If given the values will be set into the object, otherwise a brand new Line object will be created and returned.
      * @return {Phaser.Line} The cloned Line object.
      */
     clone: function (output) {
@@ -377,7 +394,7 @@ Object.defineProperty(Phaser.Line.prototype, "length", {
 Object.defineProperty(Phaser.Line.prototype, "angle", {
 
     get: function () {
-        return Math.atan2(this.end.y - this.start.y, this.end.x - this.start.x);
+        return Phaser.Point.angle(this.end, this.start);
     }
 
 });
@@ -718,6 +735,72 @@ Phaser.Line.intersectsRectangle = function (line, rect) {
     }
 
     return false;
+
+};
+
+/**
+* Finds the closest intersection between the Line and a Rectangle shape, or a rectangle-like
+* object, such as a Sprite or Body.
+*
+* @method Phaser.Line.intersectionWithRectangle
+* @param {Phaser.Line} line - The line to check for intersection with.
+* @param {Phaser.Rectangle} rect - The rectangle, or rectangle-like object, to check for intersection with.
+* @param {Phaser.Point} [result] - A Point object to store the result in.
+* @return {?Phaser.Point} - The intersection closest to the Line's start, or null if there is no intersection.
+*/
+Phaser.Line.intersectionWithRectangle = function (line, rect, result) {
+
+    var self = Phaser.Line.intersectionWithRectangle;
+
+    if (!result)
+    {
+        result = new Phaser.Point();
+    }
+
+    if (!self.edges)
+    {
+        self.edges = [new Phaser.Line(), new Phaser.Line(), new Phaser.Line(), new Phaser.Line()];
+    }
+
+    if (!self.edgeIntersection)
+    {
+        self.edgeIntersection = new Phaser.Point();
+    }
+
+    var edges = self.edges;
+    var edgeIntersection = self.edgeIntersection.set(0);
+
+    var bx1 = rect.x;
+    var by1 = rect.y;
+    var bx2 = rect.right;
+    var by2 = rect.bottom;
+    var closestDistance = Infinity;
+
+    edges[0].setTo(bx1, by1, bx2, by1);
+    edges[1].setTo(bx1, by2, bx2, by2);
+    edges[2].setTo(bx1, by1, bx1, by2);
+    edges[3].setTo(bx2, by1, bx2, by2);
+
+    for (var edge, i = 0; (edge = edges[i]); i++)
+    {
+        if (line.intersects(edge, true, edgeIntersection))
+        {
+            var distance = line.start.distance(edgeIntersection);
+
+            if (distance < closestDistance)
+            {
+                closestDistance = distance;
+                result.copyFrom(edgeIntersection);
+            }
+        }
+    }
+
+    if (distance != null)
+    {
+        return result;
+    }
+
+    return null;
 
 };
 

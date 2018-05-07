@@ -31,7 +31,9 @@
     "node_modules",
     "bower_components",
     "test",
-    "tests"
+    "tests",
+    "/docs",
+    "/resources"
   ],
   "typescript": {
     "definitions": [
@@ -40,14 +42,14 @@
       "typescript/pixi.comments.d.ts"
     ]
   },
-  "version": "2.7.9",
-  "_release": "2.7.9",
+  "version": "2.10.4",
+  "_release": "2.10.4",
   "_resolution": {
     "type": "version",
-    "tag": "v2.7.9",
-    "commit": "4208d6811b6f741549bb8ca1f5e9ad06b40c820d"
+    "tag": "v2.10.4",
+    "commit": "86f059a83e82af5433fb9f7d4095be6c07ca6b49"
   },
   "_source": "https://github.com/photonstorm/phaser-ce.git",
-  "_target": "~2.7.8",
+  "_target": "^2.10.4",
   "_originalSource": "phaser-ce"
 }

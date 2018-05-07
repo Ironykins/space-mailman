@@ -46,7 +46,6 @@ function respawn() {
 }
 
 SpaceMailman.Game.prototype.playerHitAsteroid = function() {
-    console.log("Hit")
     if(player.dead) return;
     this.explodeAt(player.sprite.body.x, player.sprite.body.y, 3);
     player.dead = true;

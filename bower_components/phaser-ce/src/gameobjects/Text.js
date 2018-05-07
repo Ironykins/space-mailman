@@ -51,7 +51,12 @@ Phaser.Text = function (game, x, y, text, style) {
         text = text.toString();
     }
 
-    style = Phaser.Utils.extend({}, style);
+    /**
+     * @property {HTMLCanvasElement} canvas - The canvas element that the text is rendered.
+     */
+    this.canvas = Phaser.CanvasPool.create(this);
+
+    Phaser.Sprite.call(this, game, x, y, PIXI.Texture.fromCanvas(this.canvas));
 
     /**
     * @property {number} type - The const type of this object.
@@ -67,7 +72,7 @@ Phaser.Text = function (game, x, y, text, style) {
 
     /**
     * Specify a padding value which is added to the line width and height when calculating the Text size.
-    * ALlows you to add extra spacing if Phaser is unable to accurately determine the true font dimensions.
+    * Allows you to add extra spacing if Phaser is unable to accurately determine the true font dimensions.
     * @property {Phaser.Point} padding
     */
     this.padding = new Phaser.Point();
@@ -79,11 +84,6 @@ Phaser.Text = function (game, x, y, text, style) {
     * @readOnly
     */
     this.textBounds = null;
-
-    /**
-     * @property {HTMLCanvasElement} canvas - The canvas element that the text is rendered.
-     */
-    this.canvas = Phaser.CanvasPool.create(this);
 
     /**
      * @property {HTMLCanvasElement} context - The context of the canvas element that the text is rendered to.
@@ -120,11 +120,11 @@ Phaser.Text = function (game, x, y, text, style) {
 
     /**
     * Will this Text object use Basic or Advanced Word Wrapping?
-    * 
+    *
     * Advanced wrapping breaks long words if they are the first of a line, and repeats the process as necessary.
     * White space is condensed (e.g., consecutive spaces are replaced with one).
     * Lines are trimmed of white space before processing.
-    * 
+    *
     * It throws an error if wordWrapWidth is less than a single character.
     * @property {boolean} useAdvancedWrap
     * @default
@@ -150,6 +150,12 @@ Phaser.Text = function (game, x, y, text, style) {
     * @property {string} characterLimitSuffix
     */
     this.characterLimitSuffix = '';
+
+    /** The text to use to measure the font width and height.
+    * @property {string} _testString
+    * @private
+    */
+    this._testString = '|MÉq';
 
     /**
      * @property {number} _res - Internal canvas resolution var.
@@ -193,9 +199,13 @@ Phaser.Text = function (game, x, y, text, style) {
     */
     this._height = 0;
 
-    Phaser.Sprite.call(this, game, x, y, PIXI.Texture.fromCanvas(this.canvas));
+    /**
+    * @property {object} style
+    * @private
+     */
+    this.style = {};
 
-    this.setStyle(style);
+    this.setStyle(style || {});
 
     if (text !== '')
     {
@@ -209,7 +219,7 @@ Phaser.Text.prototype.constructor = Phaser.Text;
 
 /**
 * Automatically called by World.preUpdate.
-* 
+*
 * @method Phaser.Text#preUpdate
 * @protected
 */
@@ -253,7 +263,7 @@ Phaser.Text.prototype.destroy = function (destroyChildren) {
 * The color controls the shade of the shadow (default is black) and can be either an `rgba` or `hex` value.
 * The blur is the strength of the shadow. A value of zero means a hard shadow, a value of 10 means a very soft shadow.
 * To remove a shadow already in place you can call this method with no parameters set.
-* 
+*
 * @method Phaser.Text#setShadow
 * @param {number} [x=0] - The shadowOffsetX value in pixels. This is how far offset horizontally the shadow effect will be.
 * @param {number} [y=0] - The shadowOffsetY value in pixels. This is how far offset vertically the shadow effect will be.
@@ -320,7 +330,7 @@ Phaser.Text.prototype.setStyle = function (style, update) {
     newStyle.boundsAlignH = (style.boundsAlignH || 'left').toLowerCase();
     newStyle.boundsAlignV = (style.boundsAlignV || 'top').toLowerCase();
     newStyle.stroke = style.stroke || 'black'; //provide a default, see: https://github.com/GoodBoyDigital/pixi.js/issues/136
-    newStyle.strokeThickness = style.strokeThickness || 0;
+    newStyle.strokeThickness = Number(style.strokeThickness) || 0;
     newStyle.wordWrap = style.wordWrap || false;
     newStyle.wordWrapWidth = style.wordWrapWidth || 100;
     newStyle.maxLines = style.maxLines || 0;
@@ -406,7 +416,7 @@ Phaser.Text.prototype.updateText = function () {
     var fontProperties = this.determineFontProperties(this.style.font);
 
     var drawnLines = lines.length;
-    
+
     if (this.style.maxLines > 0 && this.style.maxLines < lines.length)
     {
         drawnLines = this.style.maxLines;
@@ -493,7 +503,7 @@ Phaser.Text.prototype.updateText = function () {
     }
 
     this.canvas.width = maxLineWidth * this._res;
-    
+
     //  Calculate text height
     var lineHeight = fontProperties.fontSize + this.style.strokeThickness + this.padding.y;
     var height = lineHeight * drawnLines;
@@ -524,7 +534,7 @@ Phaser.Text.prototype.updateText = function () {
         this.context.fillStyle = this.style.backgroundColor;
         this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
     }
-    
+
     this.context.fillStyle = this.style.fill;
     this.context.font = this.style.font;
     this.context.strokeStyle = this.style.stroke;
@@ -780,12 +790,12 @@ Phaser.Text.prototype.updateLine = function (line, x, y) {
             {
                 components.fontStyle = this.fontStyles[this._charCount];
             }
-        
+
             if (this.fontWeights[this._charCount])
             {
                 components.fontWeight = this.fontWeights[this._charCount];
             }
-      
+
             this.context.font = this.componentsToFont(components);
         }
 
@@ -1279,7 +1289,7 @@ Phaser.Text.prototype.componentsToFont = function (components) {
 * The text will be rendered with any style currently set.
 *
 * Use the optional `immediate` argument if you need the Text display to update immediately.
-* 
+*
 * If not it will re-create the texture of this Text object during the next time the render
 * loop is called.
 *
@@ -1292,7 +1302,14 @@ Phaser.Text.prototype.setText = function (text, immediate) {
 
     if (immediate === undefined) { immediate = false; }
 
-    this.text = text.toString() || '';
+    text = text.toString() || '';
+
+    if (text === this._text)
+    {
+        return this;
+    }
+
+    this.text = text;
 
     if (immediate)
     {
@@ -1386,7 +1403,7 @@ Phaser.Text.prototype.parseList = function (list) {
  * If `Text.wordWrapWidth` is greater than the width of the text bounds it is clamped to match the bounds width.
  *
  * Call this method with no arguments given to reset an existing textBounds.
- * 
+ *
  * It works by calculating the final position based on the Text.canvas size, which is modified as the text is updated. Some fonts
  * have additional padding around them which you can mitigate by tweaking the Text.padding property. It then adjusts the `pivot`
  * property based on the given bounds and canvas size. This means if you need to set the pivot property directly in your game then
@@ -1423,7 +1440,7 @@ Phaser.Text.prototype.setTextBounds = function (x, y, width, height) {
     }
 
     this.updateTexture();
-    
+
     return this;
 
 };
@@ -1528,7 +1545,7 @@ Phaser.Text.prototype._renderCanvas = function (renderSession) {
         this.updateText();
         this.dirty = false;
     }
-     
+
     PIXI.Sprite.prototype._renderCanvas.call(this, renderSession);
 
 };
@@ -1538,23 +1555,24 @@ Phaser.Text.prototype._renderCanvas = function (renderSession) {
 *
 * @method Phaser.Text#determineFontProperties
 * @private
-* @param {object} fontStyle 
+* @param {object} fontStyle
 */
 Phaser.Text.prototype.determineFontProperties = function (fontStyle) {
 
     var properties = Phaser.Text.fontPropertiesCache[fontStyle];
+    var measureText = this.testString || '|MÉq';
 
     if (!properties)
     {
         properties = {};
-        
+
         var canvas = Phaser.Text.fontPropertiesCanvas;
         var context = Phaser.Text.fontPropertiesContext;
 
         context.font = fontStyle;
 
-        var width = Math.ceil(context.measureText('|MÉq').width);
-        var baseline = Math.ceil(context.measureText('|MÉq').width);
+        var width = Math.ceil(context.measureText(measureText).width);
+        var baseline = Math.ceil(context.measureText(measureText).width);
         var height = 2 * baseline;
 
         baseline = baseline * 1.4 | 0;
@@ -1569,7 +1587,7 @@ Phaser.Text.prototype.determineFontProperties = function (fontStyle) {
 
         context.textBaseline = 'alphabetic';
         context.fillStyle = '#000';
-        context.fillText('|MÉq', 0, baseline);
+        context.fillText(measureText, 0, baseline);
 
         if (!context.getImageData(0, 0, width, height))
         {
@@ -1809,7 +1827,7 @@ Object.defineProperty(Phaser.Text.prototype, 'fontSize', {
     set: function(value) {
 
         value = value || '0';
-        
+
         if (typeof value === 'number')
         {
             value = value + 'px';
@@ -1958,11 +1976,11 @@ Object.defineProperty(Phaser.Text.prototype, 'resolution', {
 });
 
 /**
-* The size (in pixels) of the tabs, for when text includes tab characters. 0 disables. 
+* The size (in pixels) of the tabs, for when text includes tab characters. 0 disables.
 * Can be an integer or an array of varying tab sizes, one tab per element.
 * For example if you set tabs to 100 then when Text encounters a tab it will jump ahead 100 pixels.
 * If you set tabs to be `[100,200]` then it will set the first tab at 100px and the second at 200px.
-* 
+*
 * @name Phaser.Text#tabs
 * @property {integer|array} tabs
 */
@@ -2068,7 +2086,7 @@ Object.defineProperty(Phaser.Text.prototype, 'strokeThickness', {
 
         if (value !== this.style.strokeThickness)
         {
-            this.style.strokeThickness = value;
+            this.style.strokeThickness = Number(value);
             this.dirty = true;
         }
 
@@ -2330,6 +2348,28 @@ Object.defineProperty(Phaser.Text.prototype, 'height', {
     }
 
 });
+
+/**
+* The text used to measure the font's width and height
+* @name Phaser.Text#testString
+* @default '|MÉq'
+*/
+Object.defineProperty(Phaser.Text.prototype, 'testString', {
+
+    get: function() {
+
+        return this._testString;
+
+    },
+
+    set: function(value) {
+
+        this._testString = value;
+        this.updateText();
+
+    }
+});
+
 
 Phaser.Text.fontPropertiesCache = {};
 

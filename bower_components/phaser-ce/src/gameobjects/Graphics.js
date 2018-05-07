@@ -9,7 +9,7 @@
 * Circles and Polygons. They also include lines, arcs and curves. When you initially create a Graphics object it will
 * be empty. To 'draw' to it you first specify a lineStyle or fillStyle (or both), and then draw a shape. For example:
 *
-* ```
+* ```javascript
 * graphics.beginFill(0xff0000);
 * graphics.drawCircle(50, 50, 100);
 * graphics.endFill();
@@ -28,6 +28,10 @@
 *
 * As you can tell, Graphics objects are a bit of a trade-off. While they are extremely useful, you need to be careful
 * in their complexity and quantity of them in your game.
+*
+* You may have to modify {@link Phaser.Graphics#scale} rather than {@link Phaser.Graphics#width} or
+* {@link Phaser.Graphics#height} to avoid an unusual race condition
+* ({@link #489 https://github.com/photonstorm/phaser-ce/issues/489}).
 *
 * @class Phaser.Graphics
 * @constructor
@@ -109,7 +113,7 @@ Phaser.Graphics = function (game, x, y) {
     this.graphicsData = [];
 
     /**
-     * The tint applied to the graphic shape. This is a hex value. Apply a value of 0xFFFFFF to reset the tint.
+     * The tint applied to the graphic shape. This is a hex value. Apply a value of 0xFFFFFF (Phaser.Color.WHITE) to reset the tint.
      *
      * @property tint
      * @type Number
@@ -278,7 +282,7 @@ Phaser.Graphics.prototype.destroy = function (destroyChildren) {
 };
 
 /**
-* Draws a single {Phaser.Polygon} triangle from a {Phaser.Point} array
+* Draws a single {@link Phaser.Polygon} triangle from a {@link Phaser.Point} array
 *
 * @method Phaser.Graphics#drawTriangle
 * @param {Array<Phaser.Point>} points - An array of Phaser.Points that make up the three vertices of this triangle
@@ -310,11 +314,11 @@ Phaser.Graphics.prototype.drawTriangle = function (points, cull) {
 };
 
 /**
-* Draws {Phaser.Polygon} triangles
+* Draws {@link Phaser.Polygon} triangles
 *
 * @method Phaser.Graphics#drawTriangles
 * @param {Array<Phaser.Point>|Array<number>} vertices - An array of Phaser.Points or numbers that make up the vertices of the triangles
-* @param {Array<number>} {indices=null} - An array of numbers that describe what order to draw the vertices in
+* @param {Array<number>} [indices=null] - An array of numbers that describe what order to draw the vertices in
 * @param {boolean} [cull=false] - Should we check if the triangle is back-facing
 */
 Phaser.Graphics.prototype.drawTriangles = function (vertices, indices, cull) {
@@ -833,15 +837,15 @@ Phaser.Graphics.prototype.drawCircle = function (x, y, diameter) {
  * Draws an ellipse.
  *
  * @method Phaser.Graphics#drawEllipse
- * @param x {Number} The X coordinate of the center of the ellipse
- * @param y {Number} The Y coordinate of the center of the ellipse
- * @param width {Number} The half width of the ellipse
- * @param height {Number} The half height of the ellipse
+ * @param centerX {Number} The X coordinate of the center of the ellipse
+ * @param centerY {Number} The Y coordinate of the center of the ellipse
+ * @param halfWidth {Number} The half width of the ellipse
+ * @param halfHeight {Number} The half height of the ellipse
  * @return {Graphics}
  */
-Phaser.Graphics.prototype.drawEllipse = function (x, y, width, height) {
+Phaser.Graphics.prototype.drawEllipse = function (centerX, centerY, halfWidth, halfHeight) {
 
-    this.drawShape(new Phaser.Ellipse(x, y, width, height));
+    this.drawShape({x: centerX, y: centerY, width: halfWidth, height: halfHeight, type: Phaser.ELLIPSE});
 
     return this;
 
@@ -908,6 +912,8 @@ Phaser.Graphics.prototype.clear = function () {
 /**
  * Useful function that returns a texture of the graphics object that can then be used to create sprites
  * This can be quite useful if your geometry is complicated and needs to be reused multiple times.
+ *
+ * Transparent areas adjoining the edges may be removed ({@link https://github.com/photonstorm/phaser-ce/issues/283 #283}).
  *
  * @method Phaser.Graphics#generateTexture
  * @param [resolution=1] {Number} The resolution of the texture being generated
@@ -1516,7 +1522,7 @@ Phaser.Graphics.prototype.drawShape = function (shape) {
 };
 
 /**
- * When cacheAsBitmap is set to true the graphics object will be rendered as if it was a sprite.
+ * When cacheAsBitmap is set to true the graphics object will be rendered as if it was a sprite. Transparent areas adjoining the edges may be removed ({@link https://github.com/photonstorm/phaser-ce/issues/283 #283}).
  * This is useful if your graphics element does not change often, as it will speed up the rendering of the object in exchange for taking up texture memory.
  * It is also useful if you need the graphics object to be anti-aliased, because it will be rendered using canvas.
  * This is not recommended if you are constantly redrawing the graphics element.

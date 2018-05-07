@@ -113,6 +113,19 @@ Phaser.Video = function (game, key, url) {
     this.onTimeout = new Phaser.Signal();
 
     /**
+    * This signal is dispatched when the Video is unlocked.
+    * @property {Phaser.Signal} onTouchUnlock
+    */
+    this.onTouchUnlock = new Phaser.Signal();
+
+    /**
+    * Start playing the video when it's unlocked.
+    * @property {boolean} playWhenUnlocked
+    * @default
+    */
+    this.playWhenUnlocked = true;
+
+    /**
     * @property {integer} timeout - The amount of ms allowed to elapsed before the Video.onTimeout signal is dispatched while waiting for webcam access.
     * @default
     */
@@ -299,7 +312,7 @@ Phaser.Video = function (game, key, url) {
         this.snapshot = new Phaser.BitmapData(this.game, '', this.width, this.height);
     }
 
-    if (!this.game.device.cocoonJS && (this.game.device.iOS || this.game.device.android) || (window['PhaserGlobal'] && window['PhaserGlobal'].fakeiOSTouchLock))
+    if (this.game.device.needsTouchUnlock())
     {
         this.setTouchLock();
     }
@@ -641,7 +654,7 @@ Phaser.Video.prototype = {
 
     /**
      * Starts this video playing.
-     * 
+     *
      * If the video is already playing, or has been queued to play with `changeSource` then this method just returns.
      *
      * @method Phaser.Video#play
@@ -1055,7 +1068,7 @@ Phaser.Video.prototype = {
     */
     setTouchLock: function () {
 
-        this.game.input.touch.addTouchLockCallback(this.unlock, this);
+        this.game.input.addTouchLockCallback(this.unlock, this, true);
         this.touchLocked = true;
 
     },
@@ -1071,9 +1084,12 @@ Phaser.Video.prototype = {
 
         this.touchLocked = false;
 
-        this.video.play();
+        if (this.playWhenUnlocked)
+        {
+            this.video.play();
 
-        this.onPlay.dispatch(this, this.loop, this.playbackRate);
+            this.onPlay.dispatch(this, this.loop, this.playbackRate);
+        }
 
         if (this.key)
         {
@@ -1084,6 +1100,8 @@ Phaser.Video.prototype = {
                 _video.locked = false;
             }
         }
+
+        this.onTouchUnlock.dispatch(this);
 
         return true;
 

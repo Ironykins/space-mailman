@@ -85,10 +85,12 @@ Phaser.Loader = function (game) {
     /**
     * The value of `path`, if set, is placed before any _relative_ file path given. For example:
     *
-    * `load.path = "images/sprites/";
+    * ```javascript
+    * load.path = "images/sprites/";
     * load.image("ball", "ball.png");
     * load.image("tree", "level1/oaktree.png");
-    * load.image("boom", "http://server.com/explode.png");`
+    * load.image("boom", "http://server.com/explode.png");
+    * ```
     *
     * Would load the `ball` file from `images/sprites/ball.png` and the tree from
     * `images/sprites/level1/oaktree.png` but the file `boom` would load from the URL
@@ -110,11 +112,15 @@ Phaser.Loader = function (game) {
     * This object can also be used to set the `X-Requested-With` header to
     * `XMLHttpRequest` (or any other value you need). To enable this do:
     *
-    * `this.load.headers.requestedWith = 'XMLHttpRequest'`
+    * ```javascript
+    * this.load.headers.requestedWith = 'XMLHttpRequest'
+    * ```
     *
     * before adding anything to the Loader. The XHR loader will then call:
     *
-    * `setRequestHeader('X-Requested-With', this.headers['requestedWith'])`
+    * ```javascript
+    * setRequestHeader('X-Requested-With', this.headers['requestedWith'])
+    * ```
     *
     * @property {object} headers
     * @default
@@ -126,7 +132,7 @@ Phaser.Loader = function (game) {
     };
 
     /**
-     * This event is dispatched when the loading process starts: before the first file has been requested,
+    * This event is dispatched when the loading process starts: before the first file has been requested,
     * but after all the initial packs have been loaded.
     *
     * @property {Phaser.Signal} onLoadStart
@@ -134,7 +140,16 @@ Phaser.Loader = function (game) {
     this.onLoadStart = new Phaser.Signal();
 
     /**
-    * This event is dispatched when the final file in the load queue has either loaded or failed.
+    * This event is dispatched when the final file in the load queue has either loaded or failed,
+    * before {@link #onLoadComplete} and before the loader is {@link #reset}.
+    *
+    * @property {Phaser.Signal} onBeforeLoadComplete
+    */
+    this.onBeforeLoadComplete = new Phaser.Signal();
+
+    /**
+    * This event is dispatched when the final file in the load queue has either loaded or failed,
+    * after the loader is {@link #reset}.
     *
     * @property {Phaser.Signal} onLoadComplete
     */
@@ -184,22 +199,6 @@ Phaser.Loader = function (game) {
     * @property {Phaser.Signal} onFileError
     */
     this.onFileError = new Phaser.Signal();
-
-    /**
-    * If true and if the browser supports XDomainRequest, it will be used in preference for XHR.
-    *
-    * This is only relevant for IE 9 and should _only_ be enabled for IE 9 clients when required by the server/CDN.
-    *
-    * @property {boolean} useXDomainRequest
-    * @deprecated This is only relevant for IE 9.
-    */
-    this.useXDomainRequest = false;
-
-    /**
-    * @private
-    * @property {boolean} _warnedAboutXDomainRequest - Control number of warnings for using XDR outside of IE 9.
-    */
-    this._warnedAboutXDomainRequest = false;
 
     /**
     * If true (the default) then parallel downloading will be enabled.
@@ -722,7 +721,7 @@ Phaser.Loader.prototype = {
     *
     * The texture path object looks like this:
     *
-    * ```
+    * ```javascript
     * load.image('factory', {
     *     etc1: 'assets/factory_etc1.pkm',
     *     s3tc: 'assets/factory_dxt1.pvr',
@@ -769,6 +768,30 @@ Phaser.Loader.prototype = {
     },
 
     /**
+    * Generate a grid image and add it to the current load queue.
+    *
+    * @method Phaser.Loader#imageFromGrid
+    * @see Phaser.Create#grid
+    */
+    imageFromGrid: function (key, width, height, cellWidth, cellHeight, color) {
+
+        return this.imageFromBitmapData(key, this.game.create.grid(key, width, height, cellWidth, cellHeight, color, false));
+
+    },
+
+    /**
+    * Generate a texture image and add it to the current load queue.
+    *
+    * @method Phaser.Loader#imageFromTexture
+    * @see Phaser.Create#texture
+    */
+    imageFromTexture: function (key, data, pixelWidth, pixelHeight, palette) {
+
+        return this.imageFromBitmapData(key, this.game.create.texture(key, data, pixelWidth, pixelHeight, palette, false));
+
+    },
+
+    /**
     * Adds a Compressed Texture Image to the current load queue.
     *
     * Compressed Textures are a WebGL only feature, and require 3rd party tools to create.
@@ -782,7 +805,7 @@ Phaser.Loader.prototype = {
     *
     * The texture path object looks like this:
     *
-    * ```
+    * ```javascript
     * load.texture('factory', {
     *     etc1: 'assets/factory_etc1.pkm',
     *     s3tc: 'assets/factory_dxt1.pvr',
@@ -1089,14 +1112,32 @@ Phaser.Loader.prototype = {
     * and no URL is given then the Loader will set the URL to be "alien.png". It will always add `.png` as the extension.
     * If you do not desire this action then provide a URL.
     *
+    * An image with four sprites, `margin = 1`, and `spacing = 1` looks like this:
+    *
+    * ```
+    * .......
+    * .     .
+    * . # # .
+    * .     .
+    * . # # .
+    * .     .
+    * .......
+    *
+    * .  margin
+    *    spacing
+    * #  sprite frame
+    * ```
+    *
+    * The first sprite frame is found at (margin + spacing) px from the top-left of the image.
+    *
     * @method Phaser.Loader#spritesheet
     * @param {string} key - Unique asset key of the sheet file.
     * @param {string} url - URL of the sprite sheet file. If undefined or `null` the url will be set to `<key>.png`, i.e. if `key` was "alien" then the URL will be "alien.png".
     * @param {number} frameWidth - Width in pixels of a single frame in the sprite sheet.
     * @param {number} frameHeight - Height in pixels of a single frame in the sprite sheet.
     * @param {number} [frameMax=-1] - How many frames in this sprite sheet. If not specified it will divide the whole image into frames.
-    * @param {number} [margin=0] - If the frames have been drawn with a margin, specify the amount here.
-    * @param {number} [spacing=0] - If the frames have been drawn with spacing between them, specify the amount here.
+    * @param {number} [margin=0] - Width of any empty space at the image edges, in addition to any `spacing`.
+    * @param {number} [spacing=0] - Width of any empty space between the frames, and between the frames and the `margin`. If there is space **only** between the frames, and nowhere else, use `margin` equal to `-spacing`.
     * @param {number} [skipFrames=0] - Skip a number of frames. Useful when there are multiple sprite sheets in one image.
     * @return {Phaser.Loader} This Loader instance.
     */
@@ -2048,11 +2089,18 @@ Phaser.Loader.prototype = {
             this.onLoadStart.dispatch();
         }
 
+        this.game.state.loadUpdate();
+        this.onBeforeLoadComplete.dispatch();
+
         this.reset();
 
         this.onLoadComplete.dispatch();
 
-        this.game.state.loadComplete();
+        // Check if the state still exists since destroy could have occurred while loading
+        if (this.game.state)
+        {
+            this.game.state.loadComplete();
+        }
 
     },
 
@@ -2470,12 +2518,6 @@ Phaser.Loader.prototype = {
     */
     xhrLoad: function (file, url, type, onload, onerror) {
 
-        if (this.useXDomainRequest && window.XDomainRequest)
-        {
-            this.xhrLoadWithXDR(file, url, type, onload, onerror);
-            return;
-        }
-
         var xhr = new XMLHttpRequest();
         xhr.open("GET", url, true);
         xhr.responseType = type;
@@ -2549,88 +2591,6 @@ Phaser.Loader.prototype = {
         file.requestUrl = url;
 
         xhr.send();
-
-    },
-
-    /**
-    * Starts the xhr loader - using XDomainRequest.
-    * This should _only_ be used with IE 9. Phaser does not support IE 8 and XDR is deprecated in IE 10.
-    *
-    * This is designed specifically to use with asset file processing.
-    *
-    * @method Phaser.Loader#xhrLoad
-    * @private
-    * @param {object} file - The file/pack to load.
-    * @param {string} url - The URL of the file.
-    * @param {string} type - The xhr responseType.
-    * @param {function} onload - The function to call on success. Invoked in `this` context and supplied with `(file, xhr)` arguments.
-    * @param {function} [onerror=fileError]  The function to call on error. Invoked in `this` context and supplied with `(file, xhr)` arguments.
-    * @deprecated This is only relevant for IE 9.
-    */
-    xhrLoadWithXDR: function (file, url, type, onload, onerror) {
-
-        // Special IE9 magic .. only
-        if (!this._warnedAboutXDomainRequest &&
-            (!this.game.device.ie || this.game.device.ieVersion >= 10))
-        {
-            this._warnedAboutXDomainRequest = true;
-            console.warn("Phaser.Loader - using XDomainRequest outside of IE 9");
-        }
-
-        // Ref: http://blogs.msdn.com/b/ieinternals/archive/2010/05/13/xdomainrequest-restrictions-limitations-and-workarounds.aspx
-        var xhr = new window.XDomainRequest();
-        xhr.open('GET', url, true);
-        xhr.responseType = type;
-
-        // XDomainRequest has a few quirks. Occasionally it will abort requests
-        // A way to avoid this is to make sure ALL callbacks are set even if not used
-        // More info here: http://stackoverflow.com/questions/15786966/xdomainrequest-aborts-post-on-ie-9
-        xhr.timeout = 3000;
-
-        onerror = onerror || this.fileError;
-
-        var _this = this;
-
-        xhr.onerror = function () {
-            try {
-                return onerror.call(_this, file, xhr);
-            } catch (e) {
-                _this.asyncComplete(file, e.message || 'Exception');
-            }
-        };
-
-        xhr.ontimeout = function () {
-            try {
-                return onerror.call(_this, file, xhr);
-            } catch (e) {
-                _this.asyncComplete(file, e.message || 'Exception');
-            }
-        };
-
-        xhr.onprogress = function() {};
-
-        xhr.onload = function () {
-            try {
-                if (xhr.readyState === 4 && xhr.status >= 400 && xhr.status <= 599) { // Handle HTTP status codes of 4xx and 5xx as errors, even if xhr.onerror was not called.
-                    return onerror.call(_this, file, xhr);
-                }
-                else {
-                    return onload.call(_this, file, xhr);
-                }
-                return onload.call(_this, file, xhr);
-            } catch (e) {
-                _this.asyncComplete(file, e.message || 'Exception');
-            }
-        };
-
-        file.requestObject = xhr;
-        file.requestUrl = url;
-
-        //  Note: The xdr.send() call is wrapped in a timeout to prevent an issue with the interface where some requests are lost
-        //  if multiple XDomainRequests are being sent at the same time.
-        setTimeout(function () {
-            xhr.send();
-        }, 0);
 
     },
 
@@ -3102,10 +3062,8 @@ Phaser.Loader.prototype = {
     /**
     * Update the loading sprite progress.
     *
-    * @method Phaser.Loader#nextFile
+    * @method Phaser.Loader#updateProgress
     * @private
-    * @param {object} previousFile
-    * @param {boolean} success - Whether the previous asset loaded successfully or not.
     */
     updateProgress: function () {
 

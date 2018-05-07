@@ -33,7 +33,7 @@ Phaser.Keyboard = function (game) {
     this.enabled = true;
 
     /**
-    * @property {object} event - The most recent DOM event from keydown or keyup. This is updated every time a new key is pressed or released.
+    * @property {KeyboardEvent} event - The most recent DOM event from keydown or keyup. This is updated every time a new key is pressed or released.
     */
     this.event = null;
 
@@ -48,17 +48,17 @@ Phaser.Keyboard = function (game) {
     this.callbackContext = this;
 
     /**
-    * @property {function} onDownCallback - This callback is invoked every time a key is pressed down, including key repeats when a key is held down.
+    * @property {function} onDownCallback - This callback is invoked every time a key is pressed down, including key repeats when a key is held down. One argument is passed: {KeyboardEvent} event.
     */
     this.onDownCallback = null;
 
     /**
-    * @property {function} onPressCallback - This callback is invoked every time a DOM onkeypress event is raised, which is only for printable keys.
+    * @property {function} onPressCallback - This callback is invoked every time a DOM onkeypress event is raised, which is only for printable keys. Two arguments are passed: {string} `String.fromCharCode(event.charCode)` and {KeyboardEvent} event.
     */
     this.onPressCallback = null;
 
     /**
-    * @property {function} onUpCallback - This callback is invoked every time a key is released.
+    * @property {function} onUpCallback - This callback is invoked every time a key is released. One argument is passed: {KeyboardEvent} event.
     */
     this.onUpCallback = null;
 
@@ -142,6 +142,20 @@ Phaser.Keyboard.prototype = {
     },
 
     /**
+    * Removes callbacks added by {@link #addCallbacks} and restores {@link #callbackContext}.
+    *
+    * @method Phaser.Keyboard#removeCallbacks
+    */
+    removeCallbacks: function () {
+
+        this.callbackContext = this;
+        this.onDownCallback = null;
+        this.onUpCallback = null;
+        this.onPressCallback = null;
+
+    },
+
+    /**
     * If you need more fine-grained control over a Key you can create a new Phaser.Key object via this method.
     * The Key object can then be polled, have events attached to it, etc.
     *
@@ -218,7 +232,7 @@ Phaser.Keyboard.prototype = {
     },
 
     /**
-    * Starts the Keyboard event listeners running (keydown and keyup). They are attached to the window.
+    * Starts the Keyboard event listeners running (keydown, keyup and keypress). They are attached to the window.
     * This is called automatically by Phaser.Input and should not normally be invoked directly.
     *
     * @method Phaser.Keyboard#start

@@ -75,7 +75,7 @@ Phaser.World.prototype.boot = function () {
 
 /**
 * Called whenever the State changes or resets.
-* 
+*
 * It resets the world.x and world.y coordinates back to zero,
 * then resets the Camera.
 *
@@ -123,7 +123,10 @@ Phaser.World.prototype.setBounds = function (x, y, width, height) {
 };
 
 /**
-* Updates the size of this world. Note that this doesn't modify the world x/y coordinates, just the width and height.
+* Updates this world's width and height (but not smaller than any previous {@link #setBounds defined size}).
+*
+* Phaser uses this to adapt to {@link Phaser.ScaleManager#updateDimensions layout changes}.
+* You probably want to use {@link #setBounds} instead.
 *
 * @method Phaser.World#resize
 * @param {number} width - New width of the game world in pixels.
@@ -237,6 +240,21 @@ Phaser.World.prototype.wrap = function (sprite, padding, useBounds, horizontal, 
             }
         }
     }
+
+};
+
+/**
+* @method Phaser.World#wrapAll
+* @param {Phaser.Group} group - A group of sprites.
+* @param {boolean} [checkExists=false] - Wrap only sprites having `exists=true`.
+* @param {number} [padding=0] - Extra padding added equally to the sprite.x and y coordinates before checking if within the world bounds. Ignored if useBounds is true.
+* @param {boolean} [useBounds=false] - If useBounds is false wrap checks the object.x/y coordinates. If true it does a more accurate bounds check, which is more expensive.
+* @param {boolean} [horizontal=true] - If horizontal is false, wrap will not wrap the object.x coordinates horizontally.
+* @param {boolean} [vertical=true] - If vertical is false, wrap will not wrap the object.y coordinates vertically.
+*/
+Phaser.World.prototype.wrapAll = function (group, checkExists, padding, useBounds, horizontal, vertical) {
+
+    group.forEach(this.wrap, this, checkExists, padding, useBounds, horizontal, vertical);
 
 };
 

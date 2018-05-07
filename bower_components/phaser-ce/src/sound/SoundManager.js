@@ -11,8 +11,8 @@
 * There is a good guide to what's supported here: http://hpr.dogphilosophy.net/test/
 *
 * If you are reloading a Phaser Game on a page that never properly refreshes (such as in an AngularJS project) then you will quickly run out
-* of AudioContext nodes. If this is the case create a global var called PhaserGlobal on the window object before creating the game. The active
-* AudioContext will then be saved to window.PhaserGlobal.audioContext when the Phaser game is destroyed, and re-used when it starts again.
+* of AudioContext nodes. If this is the case create a global var called {@link PhaserGlobal} on the window object before creating the game. The active
+* AudioContext will then be saved to `window.PhaserGlobal.audioContext` when the Phaser game is destroyed, and re-used when it starts again.
 *
 * Mobile warning: There are some mobile devices (certain iPad 2 and iPad Mini revisions) that cannot play 48000 Hz audio.
 * When they try to play the audio becomes extremely distorted and buzzes, eventually crashing the sound system.
@@ -52,6 +52,13 @@ Phaser.SoundManager = function (game) {
     * @property {Phaser.Signal} onUnMute
     */
     this.onUnMute = new Phaser.Signal();
+
+    /**
+     * This signal is dispatched when the SoundManager is touch-unlocked.
+     * If the device doesn't {@link Phaser.Device.needsTouchUnlock need touch-unlocking}, the signal won't be dispatched.
+     * @property {Phaser.Signal} onTouchUnlock
+     */
+    this.onTouchUnlock = new Phaser.Signal();
 
     /**
     * @property {AudioContext} context - The AudioContext being used for playback.
@@ -99,7 +106,7 @@ Phaser.SoundManager = function (game) {
     * Set to true to have all sound muted when the Phaser game pauses (such as on loss of focus),
     * or set to false to keep audio playing, regardless of the game pause state. You may need to
     * do this should you wish to control audio muting via external DOM buttons or similar.
-    * @property {boolean} muteOnPause 
+    * @property {boolean} muteOnPause
     * @default
     */
     this.muteOnPause = true;
@@ -131,6 +138,7 @@ Phaser.SoundManager = function (game) {
     * @default
     */
     this._volume = 1;
+
 
     /**
     * @property {array} _sounds - An array containing all the sounds
@@ -173,16 +181,19 @@ Phaser.SoundManager.prototype = {
     */
     boot: function () {
 
-        if (this.game.device.iOS && this.game.device.webAudio === false)
+        var device = this.game.device;
+        var PhaserGlobal = window.PhaserGlobal;
+
+        if (device.iOS && device.webAudio === false)
         {
             this.channels = 1;
         }
 
         //  PhaserGlobal overrides
-        if (window['PhaserGlobal'])
+        if (PhaserGlobal)
         {
             //  Check to see if all audio playback is disabled (i.e. handled by a 3rd party class)
-            if (window['PhaserGlobal'].disableAudio === true)
+            if (PhaserGlobal.disableAudio === true)
             {
                 this.noAudio = true;
                 this.touchLocked = false;
@@ -190,7 +201,7 @@ Phaser.SoundManager.prototype = {
             }
 
             //  Check if the Web Audio API is disabled (for testing Audio Tag playback during development)
-            if (window['PhaserGlobal'].disableWebAudio === true)
+            if (PhaserGlobal.disableWebAudio === true)
             {
                 this.usingAudioTag = true;
                 this.touchLocked = false;
@@ -198,30 +209,27 @@ Phaser.SoundManager.prototype = {
             }
         }
 
-        if (window['PhaserGlobal'] && window['PhaserGlobal'].audioContext)
+        if (PhaserGlobal && PhaserGlobal.audioContext)
         {
-            this.context = window['PhaserGlobal'].audioContext;
+            this.context = PhaserGlobal.audioContext;
         }
         else
         {
-            if (!!window['AudioContext'])
+            var AudioContext = window.AudioContext || window.webkitAudioContext;
+
+            if (AudioContext)
             {
-                try {
-                    this.context = new window['AudioContext']();
-                } catch (error) {
-                    this.context = null;
-                    this.usingWebAudio = false;
-                    this.touchLocked = false;
+                try
+                {
+                    this.context = new AudioContext();
                 }
-            }
-            else if (!!window['webkitAudioContext'])
-            {
-                try {
-                    this.context = new window['webkitAudioContext']();
-                } catch (error) {
+                catch (error)
+                {
                     this.context = null;
                     this.usingWebAudio = false;
                     this.touchLocked = false;
+
+                    console.warn(error);
                 }
             }
         }
@@ -229,7 +237,7 @@ Phaser.SoundManager.prototype = {
         if (this.context === null)
         {
             //  No Web Audio support - how about legacy Audio?
-            if (window['Audio'] === undefined)
+            if (window.Audio === undefined)
             {
                 this.noAudio = true;
                 return;
@@ -254,15 +262,27 @@ Phaser.SoundManager.prototype = {
 
             this.masterGain.gain.value = 1;
             this.masterGain.connect(this.context.destination);
+
+            // A suspended context is actually normal (momentarily) in Firefox.
+            // In that case the input handler will do nothing, which is fine.
+            if (this.context.state === 'suspended')
+            {
+                this.game.input.onUp.addOnce(this.resumeWebAudio, this);
+            }
         }
 
         if (!this.noAudio)
         {
             //  On mobile we need a native touch event before we can play anything, so capture it here
-            if (!this.game.device.cocoonJS && this.game.device.iOS || (window['PhaserGlobal'] && window['PhaserGlobal'].fakeiOSTouchLock))
+            if (device.needsTouchUnlock())
             {
                 this.setTouchLock();
             }
+        }
+
+        if (this.usingWebAudio && device.chrome && device.chromeVersion <= 65)
+        {
+            console.log('A "GainNode.gain.value setter smoothing is deprecated" notice in Chrome is normal. <https://github.com/photonstorm/phaser-ce/issues/385>');
         }
 
     },
@@ -275,21 +295,44 @@ Phaser.SoundManager.prototype = {
     */
     setTouchLock: function () {
 
-        if (this.noAudio || (window['PhaserGlobal'] && window['PhaserGlobal'].disableAudio === true))
+        if (this.noAudio || (window.PhaserGlobal && window.PhaserGlobal.disableAudio === true))
         {
             return;
         }
 
-        if (this.game.device.iOSVersion > 8)
-        {
-            this.game.input.touch.addTouchLockCallback(this.unlock, this, true);
-        }
-        else
-        {
-            this.game.input.touch.addTouchLockCallback(this.unlock, this);
-        }
+        this.game.input.addTouchLockCallback(this.unlock, this, true);
 
         this.touchLocked = true;
+
+    },
+
+    /**
+    * Turns off {@link #touchLocked} and dispatches {@link #onTouchUnlock}.
+    *
+    * @method Phaser.SoundManager#setTouchUnlock
+    * @private
+    */
+    setTouchUnlock: function () {
+
+        this.touchLocked = false;
+        this._unlockSource = null;
+        this.onTouchUnlock.dispatch();
+
+    },
+
+    /**
+    * Try to resume a suspended WebAudio context.
+    *
+    * If the context isn't suspended, or if WebAudio isn't in use, nothing is done.
+    *
+    * @return {?Promise} - A Promise, if resume was called. See {@link https://developer.mozilla.org/en-US/docs/Web/API/BaseAudioContext/resume}.
+    */
+    resumeWebAudio: function () {
+
+        if (this.usingWebAudio && this.context.state === 'suspended')
+        {
+            return this.context.resume();
+        }
 
     },
 
@@ -309,8 +352,7 @@ Phaser.SoundManager.prototype = {
         //  Global override (mostly for Audio Tag testing)
         if (this.usingAudioTag)
         {
-            this.touchLocked = false;
-            this._unlockSource = null;
+            this.setTouchUnlock();
         }
         else if (this.usingWebAudio)
         {
@@ -330,6 +372,9 @@ Phaser.SoundManager.prototype = {
             {
                 this._unlockSource.start(0);
             }
+
+            // This fixes locked audio in Chrome > 55 cross origin iframes?
+            this.resumeWebAudio();
         }
 
         //  We can remove the event because we've done what we needed (started the unlock sound playing)
@@ -505,8 +550,8 @@ Phaser.SoundManager.prototype = {
 
         if (this.touchLocked && this._unlockSource !== null && (this._unlockSource.playbackState === this._unlockSource.PLAYING_STATE || this._unlockSource.playbackState === this._unlockSource.FINISHED_STATE))
         {
-            this.touchLocked = false;
-            this._unlockSource = null;
+            this.setTouchUnlock();
+            this.resumeWebAudio();
         }
 
         for (var i = 0; i < this._sounds.length; i++)
@@ -598,6 +643,28 @@ Phaser.SoundManager.prototype = {
         }
 
         return false;
+
+    },
+
+    /**
+    * Removes all Sounds from the SoundManager.
+    * The removed Sounds are destroyed before removal.
+    *
+    * @method Phaser.SoundManager#removeAll
+    */
+    removeAll: function () {
+
+        this.stopAll();
+
+        for (var i = 0; i < this._sounds.length; i++)
+        {
+            if (this._sounds[i])
+            {
+                this._sounds[i].destroy();
+            }
+        }
+
+        this._sounds.length = 0;
 
     },
 
@@ -726,26 +793,16 @@ Phaser.SoundManager.prototype = {
     */
     destroy: function () {
 
-        this.stopAll();
-
-        for (var i = 0; i < this._sounds.length; i++)
-        {
-            if (this._sounds[i])
-            {
-                this._sounds[i].destroy();
-            }
-        }
-
-        this._sounds = [];
+        this.removeAll();
 
         this.onSoundDecode.dispose();
 
         if (this.context)
         {
-            if (window['PhaserGlobal'])
+            if (window.PhaserGlobal)
             {
                 //  Store this in the PhaserGlobal window var, if set, to allow for re-use if the game is created again without the page refreshing
-                window['PhaserGlobal'].audioContext = this.context;
+                window.PhaserGlobal.audioContext = this.context;
             }
             else
             {

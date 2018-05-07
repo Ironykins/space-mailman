@@ -39,20 +39,20 @@ SpaceMailman.Game.prototype.spawnAsteroid = function(x,y,scale) {
 
     ast = asteroids.create(x, y, 'asteroids', astSprite);
     ast.body.collideWorldBounds = true;
-    ast.body.setCircle(radius,-(radius/2),-(radius/2));
+    ast.body.setCircle(radius/2);
     ast.body.drag.set(0.01);
     ast.body.bounce.set(0.5);
     ast.scale.set(2);
     ast.asteroidSize = scale;
     ast.smoothed = false;
-    ast.body.velocity.set(600*(Math.random()-0.5),600*(Math.random()-0.5));
+    return ast;
 }
 
 // Destroys an asteroid. Breaks it down.
-SpaceMailman.Game.prototype.destroyAsteroid = function(asteroid) {
-    var newX = asteroid.x;
-    var newY = asteroid.y;
+SpaceMailman.Game.prototype.destroyAsteroid = function(asteroid, body2) {
     var newSize = asteroid.asteroidSize - 1;
+    var position = new Phaser.Point(asteroid.x, asteroid.y);
+    var baseVel = asteroid.body.velocity;
 
     //Destroy the asteroid.
     this.explodeAt(asteroid.x,asteroid.y);
@@ -62,8 +62,27 @@ SpaceMailman.Game.prototype.destroyAsteroid = function(asteroid) {
     if(newSize < 1)
         return;
 
-    this.spawnAsteroid(newX+64,newY,newSize);
-    this.spawnAsteroid(newX-64,newY,newSize);
+    // Create the asteroids.
+    // var shotVector = new Phaser.Point(position.x - body2.position.x, position.y - body2.position.y).normalize();
+    var shotVector = body2.body.newVelocity.normalize();
+    var pos1 = Phaser.Point.add(asteroid.position, Phaser.Point.multiply(Phaser.Point.rotate(shotVector,0,0,Math.PI/8),new Phaser.Point(50,50)));
+    var pos2 = Phaser.Point.add(asteroid.position, Phaser.Point.multiply(Phaser.Point.rotate(shotVector,0,0,-Math.PI/8),new Phaser.Point(50,50)));
+
+    var ast1 = this.spawnAsteroid(pos1.x, pos1.y, newSize);
+    var ast2 = this.spawnAsteroid(pos2.x, pos2.y, newSize);
+
+    // Calculate new velocities.
+    var vel1 = new Phaser.Point(ast1.body.position.x - body2.position.x, ast1.body.position.y - body2.position.y).normalize();
+    var vel2 = new Phaser.Point(ast2.body.position.x - body2.position.x, ast2.body.position.y - body2.position.y).normalize();
+
+    var vec1 = Phaser.Point.rotate(shotVector,0,0,Math.PI/8)
+    var vec2 = Phaser.Point.rotate(shotVector,0,0,-Math.PI/8)
+
+    ast1.body.velocity = new Phaser.Point(baseVel.x,baseVel.y);
+    ast1.body.velocity.add(100 * vec1.x, 100 * vec1.y);
+
+    ast2.body.velocity = new Phaser.Point(baseVel.x,baseVel.y);
+    ast2.body.velocity.add(100 * vec2.x, 100 * vec2.y);
 
     player.score += 1;
     this.updateHUD();

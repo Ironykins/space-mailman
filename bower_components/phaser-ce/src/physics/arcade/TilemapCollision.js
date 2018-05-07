@@ -7,6 +7,8 @@
 /**
 * The Arcade Physics Tile map collision methods.
 *
+* These are mixed into {@link Phaser.Physics.Arcade}.
+*
 * @class Phaser.Physics.Arcade.TilemapCollision
 * @constructor
 */
@@ -15,7 +17,7 @@ Phaser.Physics.Arcade.TilemapCollision = function () {};
 Phaser.Physics.Arcade.TilemapCollision.prototype = {
 
     /**
-    * @property {number} TILE_BIAS - A value added to the delta values during collision with tiles. Adjust this if you get tunneling.
+    * @property {number} TILE_BIAS - A value added to the delta values during collision with tiles. The best value probably depends on your tile size. Increase it if sprites are tunneling; decrease it if sprites are flipping across tile edges.
     */
     TILE_BIAS: 16,
 
@@ -128,7 +130,7 @@ Phaser.Physics.Arcade.TilemapCollision.prototype = {
         {
             return false;
         }
-        
+
         var tilemapLayerOffsetX = tilemapLayer.getTileOffsetX();
         var tilemapLayerOffsetY = tilemapLayer.getTileOffsetY();
 
@@ -358,10 +360,12 @@ Phaser.Physics.Arcade.TilemapCollision.prototype = {
         if (x < 0)
         {
             body.blocked.left = true;
+            body.blocked.none = false;
         }
         else if (x > 0)
         {
             body.blocked.right = true;
+            body.blocked.none = false;
         }
 
         body.position.x -= x;
@@ -390,10 +394,12 @@ Phaser.Physics.Arcade.TilemapCollision.prototype = {
         if (y < 0)
         {
             body.blocked.up = true;
+            body.blocked.none = false;
         }
         else if (y > 0)
         {
             body.blocked.down = true;
+            body.blocked.none = false;
         }
 
         body.position.y -= y;

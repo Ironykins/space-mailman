@@ -49,7 +49,11 @@
 *
 * -  ##### Fluid game/canvas size
 *
-*    Use `scaleMode` RESIZE. Examine the game or canvas size from the {@link onSizeChange} signal and reposition game objects.
+*    Use `scaleMode` RESIZE. Examine the game or canvas size from the {@link #onSizeChange} signal **or** the {@link Phaser.State#resize} callback and reposition game objects if necessary.
+*
+* -  ##### Preferred orientation
+*
+*    Call {@link #forceOrientation} with the preferred orientation and use any of the {@link #onOrientationChange}, {@link #enterIncorrectOrientation}, or {@link #leaveIncorrectOrientation} signals.
 *
 * @description
 * Create a new ScaleManager object - this is done automatically by {@link Phaser.Game}
@@ -450,8 +454,9 @@ Phaser.ScaleManager = function (game, width, height) {
     this._fullScreenScaleMode = Phaser.ScaleManager.NO_SCALE;
 
     /**
-    * If the parent container of the Game canvas is the browser window itself (i.e. document.body),
-    * rather than another div, this should set to `true`.
+    * True if the the browser window (instead of the display canvas's DOM parent) should be used as the bounding parent.
+    *
+    * This is set automatically based on the `parent` argument passed to {@link Phaser.Game}.
     *
     * The {@link #parentNode} property is generally ignored while this is in effect.
     *
@@ -462,6 +467,8 @@ Phaser.ScaleManager = function (game, width, height) {
     /**
     * The _original_ DOM element for the parent of the Display canvas.
     * This may be different in fullscreen - see {@link #createFullScreenTarget}.
+    *
+    * This is set automatically based on the `parent` argument passed to {@link Phaser.Game}.
     *
     * This should only be changed after moving the Game canvas to a different DOM parent.
     *
@@ -659,6 +666,20 @@ Phaser.ScaleManager.RESIZE = 3;
 */
 Phaser.ScaleManager.USER_SCALE = 4;
 
+/**
+* Names of the scale modes, indexed by value.
+*
+* @constant
+* @type {string[]}
+*/
+Phaser.ScaleManager.MODES = [
+    'EXACT_FIT',
+    'NO_SCALE',
+    'SHOW_ALL',
+    'RESIZE',
+    'USER_SCALE'
+];
+
 Phaser.ScaleManager.prototype = {
 
     /**
@@ -795,6 +816,14 @@ Phaser.ScaleManager.prototype = {
             this.fullScreenTarget = config['fullScreenTarget'];
         }
 
+        this.pageAlignHorizontally = config.alignH || false;
+        this.pageAlignVertically = config.alignV || false;
+
+        if (config.scaleH && config.scaleV)
+        {
+            this.setUserScale(config.scaleH, config.scaleV, config.trimH, config.trimV);
+        }
+
     },
 
     /**
@@ -843,7 +872,7 @@ Phaser.ScaleManager.prototype = {
             this.parentNode = target;
             this.parentIsWindow = false;
 
-            this.getParentBounds(this._parentBounds);
+            this.getParentBounds(this._parentBounds, this.parentNode);
 
             rect.width = this._parentBounds.width;
             rect.height = this._parentBounds.height;
@@ -1214,6 +1243,12 @@ Phaser.ScaleManager.prototype = {
 
         if (forcePortrait === undefined) { forcePortrait = false; }
 
+        if (forceLandscape === true && forcePortrait === true)
+        {
+            console.warn('Phaser.ScaleManager: forceLandscape and forcePortrait cannot both be true.');
+            return;
+        }
+
         this.forceLandscape = forceLandscape;
         this.forcePortrait = forcePortrait;
 
@@ -1455,12 +1490,13 @@ Phaser.ScaleManager.prototype = {
     * @method Phaser.ScaleManager#getParentBounds
     * @protected
     * @param {Phaser.Rectangle} [target=(new Rectangle)] - The rectangle to update; a new one is created as needed.
+    * @param {HTMLElement} [parent] - Ignore {@link #boundingParent} and use this node instead.
     * @return {Phaser.Rectangle} The established parent bounds.
     */
-    getParentBounds: function (target) {
+    getParentBounds: function (target, parent) {
 
         var bounds = target || new Phaser.Rectangle();
-        var parentNode = this.boundingParent;
+        var parentNode = parent || this.boundingParent;
         var visualBounds = this.dom.visualBounds;
         var layoutBounds = this.dom.layoutBounds;
 
@@ -1496,6 +1532,28 @@ Phaser.ScaleManager.prototype = {
             Math.round(bounds.width), Math.round(bounds.height));
 
         return bounds;
+
+    },
+
+
+    /**
+     * Shorthand for setting {@link #pageAlignHorizontally} and {@link #pageAlignVertically}.
+     *
+     * @method Phaser.ScaleManager#align
+     * @param {boolean} [horizontal] - Value for {@link #pageAlignHorizontally}. Pass `null` to leave unchanged.
+     * @param {boolean} [vertical] - Value for {@link #pageAlignVertically}. Omit or pass `null` to leave unchanged.
+     */
+    align: function (horizontal, vertical) {
+
+        if (horizontal != null)
+        {
+            this.pageAlignHorizontally = horizontal;
+        }
+
+        if (vertical != null)
+        {
+            this.pageAlignVertically = vertical;
+        }
 
     },
 
@@ -1783,13 +1841,23 @@ Phaser.ScaleManager.prototype = {
     },
 
     /**
-    * Start the browsers fullscreen mode - this _must_ be called from a user input Pointer or Mouse event.
+    * Display the game in the browser's fullscreen mode.
     *
-    * The Fullscreen API must be supported by the browser for this to work - it is not the same as setting
+    * This _must_ be called from a user-input Pointer or Mouse event (and possibly a {@link https://www.chromestatus.com/feature/6131337345892352 "user gesture"}), e.g.,
+    *
+    * - {@link Phaser.Events#onInputUp}
+    * - {@link Phaser.Input#onUp} or {@link Phaser.Input#onTap}
+    * - `click`, `mousedown`, `mouseup`, `pointerup`, or `touchend`
+    *
+    * Games within an iframe will also be blocked from fullscreen unless the iframe has the `allowfullscreen` attribute.
+    *
+    * The {@link https://developer.mozilla.org/en-US/docs/Web/API/Fullscreen_API Fullscreen API} must be {@link http://caniuse.com/#search=fullscreen supported by the browser} for this to work - it is not the same as setting
     * the game size to fill the browser window. See {@link Phaser.ScaleManager#compatibility compatibility.supportsFullScreen} to check if the current
     * device is reported to support fullscreen mode.
     *
     * The {@link #fullScreenFailed} signal will be dispatched if the fullscreen change request failed or the game does not support the Fullscreen API.
+    *
+    * Safari blocks access to keyboard events in fullscreen mode (as a security measure).
     *
     * @method Phaser.ScaleManager#startFullScreen
     * @public
